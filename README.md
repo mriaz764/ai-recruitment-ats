@@ -81,7 +81,17 @@ SQLAlchemy model / PostgreSQL
 - **Schema** — defines validated request and response data with Pydantic.
 - **Database dependency** — provides a session for a request and closes it afterward.
 
+
 We keep these layers because they clarify responsibilities and make the feature easier to test. We will avoid adding abstractions that do not solve a real problem.
+
+### Error Handling
+
+- Centralized FastAPI exception handlers for application, validation, HTTP, database, and unexpected errors.
+- Consistent API error responses that avoid exposing internal exception details.
+- Database transaction rollback on failed write operations.
+- Automated tests for error responses and transaction safety.
+
+See [`doc/ERROR_HANDLING_LEARNING_NOTES.md`](doc/ERROR_HANDLING_LEARNING_NOTES.md) for implementation details and learning notes.
 
 ## Repository structure
 
