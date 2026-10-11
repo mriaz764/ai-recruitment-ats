@@ -10,6 +10,14 @@ class JobCreate(BaseModel):
     location: str = Field(min_length=2, max_length=150)
 
 
+class JobUpdate(JobCreate):
+    """Fields required when replacing an existing job."""
+
+
+class JobStatusUpdate(BaseModel):
+    is_active: bool
+
+
 class JobRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

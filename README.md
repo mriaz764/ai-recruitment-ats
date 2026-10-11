@@ -342,11 +342,11 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Introduce Alembic migrations.
   - [x] Add API tests and code-quality checks.
 
-- [ ] **Milestone 3 — Complete job management**
-  - [ ] Add job detail endpoint.
-  - [ ] Add job update endpoint.
-  - [ ] Add publish and close operations.
-  - [ ] Add tests for successful and invalid operations.
+- [x] **Milestone 3 — Complete Job Management**
+  - [x] Add job detail endpoint.
+  - [x] Add job update endpoint.
+  - [x] Add job activation and deactivation endpoint.
+  - [x] Add tests for successful and invalid operations.
 
 - [ ] **Milestone 4 — Authentication and organizations**
   - [ ] Add authentication.
@@ -428,6 +428,7 @@ Recruitment can materially affect people's lives. Future AI features must be bui
 
 - [`doc/MILESTONE_01_LEARNING_NOTES.md`](doc/MILESTONE_01_LEARNING_NOTES.md) — initial backend foundation.
 - [`doc/MILESTONE_02_LEARNING_NOTES.md`](doc/MILESTONE_02_LEARNING_NOTES.md) — PostgreSQL, SQLAlchemy, Alembic, Jobs architecture, and tests.
+- [Milestone 3 Learning Notes](doc/MILESTONE_03_LEARNING_NOTES.md)
 
 ## Final product vision
 
