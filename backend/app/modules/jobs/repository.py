@@ -11,13 +11,24 @@ def create(db: Session, job: Job) -> Job:
     return job
 
 
-def list_all(db: Session) -> list[Job]:
-    statement = select(Job).order_by(Job.created_at.desc())
+def list_all(db: Session, organization_id: int) -> list[Job]:
+    statement = (
+        select(Job)
+        .where(Job.organization_id == organization_id)
+        .order_by(Job.created_at.desc())
+    )
     return list(db.scalars(statement).all())
 
 
-def get_by_id(db: Session, job_id: int) -> Job | None:
-    statement = select(Job).where(Job.id == job_id)
+def get_by_id(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+) -> Job | None:
+    statement = select(Job).where(
+        Job.id == job_id,
+        Job.organization_id == organization_id,
+    )
     return db.scalar(statement)
 
 

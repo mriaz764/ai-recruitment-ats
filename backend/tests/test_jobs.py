@@ -1,41 +1,4 @@
-import pytest
-from fastapi.testclient import TestClient
-
-from app.db.dependencies import get_db
-from app.db.session import SessionLocal, engine
-from app.main import app
 from app.modules.jobs.models import Job
-
-
-@pytest.fixture
-def db_session():
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = SessionLocal(
-        bind=connection,
-        join_transaction_mode="create_savepoint",
-    )
-
-    try:
-        yield session
-    finally:
-        session.close()
-        transaction.rollback()
-        connection.close()
-
-
-@pytest.fixture
-def client(db_session):
-    def override_get_db():
-        yield db_session
-
-    app.dependency_overrides[get_db] = override_get_db
-
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.pop(get_db, None)
 
 
 def test_create_job_returns_created_job(client, db_session):
@@ -63,12 +26,13 @@ def test_create_job_returns_created_job(client, db_session):
     assert saved_job.title == payload["title"]
 
 
-def test_list_jobs_returns_saved_job(client, db_session):
+def test_list_jobs_returns_saved_job(client, db_session, organization_id):
     job = Job(
         title="Flutter Developer",
         department="Mobile",
         description="Develop and maintain Flutter mobile applications.",
         location="Remote",
+        organization_id=organization_id,
     )
     db_session.add(job)
     db_session.flush()
@@ -96,12 +60,13 @@ def test_create_job_rejects_invalid_input(client):
     assert response.status_code == 422
 
 
-def test_get_job_returns_saved_job(client, db_session):
+def test_get_job_returns_saved_job(client, db_session, organization_id):
     job = Job(
         title="Senior Flutter Developer",
         department="Mobile",
         description="Develop and maintain Flutter mobile applications.",
         location="Remote",
+        organization_id=organization_id,
     )
     db_session.add(job)
     db_session.flush()
@@ -122,12 +87,13 @@ def test_get_job_returns_404_when_missing(client):
     assert response.json()["error"]["code"] == "JOB_NOT_FOUND"
 
 
-def test_update_job_returns_updated_job(client, db_session):
+def test_update_job_returns_updated_job(client, db_session, organization_id):
     job = Job(
         title="Flutter Developer",
         department="Mobile",
         description="Develop and maintain Flutter mobile applications.",
         location="Remote",
+        organization_id=organization_id,
     )
     db_session.add(job)
     db_session.flush()
@@ -177,13 +143,14 @@ def test_update_job_rejects_invalid_input(client):
     assert response.status_code == 422
 
 
-def test_deactivate_job(client, db_session):
+def test_deactivate_job(client, db_session, organization_id):
     job = Job(
         title="Flutter Developer",
         department="Mobile",
         description="Develop and maintain Flutter mobile applications.",
         location="Remote",
         is_active=True,
+        organization_id=organization_id,
     )
     db_session.add(job)
     db_session.flush()
@@ -200,13 +167,14 @@ def test_deactivate_job(client, db_session):
     assert job.is_active is False
 
 
-def test_activate_job(client, db_session):
+def test_activate_job(client, db_session, organization_id):
     job = Job(
         title="Flutter Developer",
         department="Mobile",
         description="Develop and maintain Flutter mobile applications.",
         location="Remote",
         is_active=False,
+        organization_id=organization_id,
     )
     db_session.add(job)
     db_session.flush()

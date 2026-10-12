@@ -12,6 +12,7 @@ from app.core.exception_handlers import (
     validation_error_handler,
 )
 from app.core.exceptions import AppError
+from app.modules.auth.router import router as auth_router
 from app.modules.jobs.router import router as jobs_router
 
 app = FastAPI(
@@ -36,4 +37,5 @@ app.add_exception_handler(
 )
 
 app.include_router(health_router)
+app.include_router(auth_router)
 app.include_router(jobs_router)

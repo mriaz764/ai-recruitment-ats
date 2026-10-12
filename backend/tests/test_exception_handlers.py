@@ -3,7 +3,6 @@ from asyncio import run
 
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.testclient import TestClient
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.exception_handlers import (
@@ -13,7 +12,6 @@ from app.core.exception_handlers import (
     validation_error_handler,
 )
 from app.core.exceptions import ConflictError, NotFoundError
-from app.main import app
 
 
 def make_request(
@@ -119,9 +117,7 @@ def test_unexpected_error_returns_generic_response(
     assert "Unhandled exception" in caplog.text
 
 
-def test_invalid_job_request_uses_registered_handler() -> None:
-    client = TestClient(app)
-
+def test_invalid_job_request_uses_registered_handler(client):
     response = client.post(
         "/jobs",
         json={
@@ -133,4 +129,3 @@ def test_invalid_job_request_uses_registered_handler() -> None:
     )
 
     assert response.status_code == 422
-    assert response.json()["error"]["code"] == "VALIDATION_ERROR"

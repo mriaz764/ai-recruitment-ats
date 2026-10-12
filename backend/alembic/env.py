@@ -6,7 +6,12 @@ from sqlalchemy import create_engine, pool
 
 from app.core.config import DATABASE_URL
 from app.db.session import Base
-from app.modules.jobs.models import Job
+from app.modules.jobs.models import Job  # noqa: F401
+from app.modules.organizations.models import (  # noqa: F401
+    Membership,
+    Organization,
+    User,
+)
 
 config = context.config
 

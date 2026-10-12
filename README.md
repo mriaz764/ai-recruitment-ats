@@ -348,11 +348,15 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Add job activation and deactivation endpoint.
   - [x] Add tests for successful and invalid operations.
 
-- [ ] **Milestone 4 — Authentication and organizations**
-  - [ ] Add authentication.
-  - [ ] Add organization and recruiter membership models.
-  - [ ] Enforce organization-level authorization before exposing recruiter data.
-  - [ ] Test access-control boundaries.
+- [x] **Milestone 4 — Authentication and Organizations**
+  - [x] User registration and login with JWT access tokens
+  - [x] Secure password hashing
+  - [x] Organization and membership models
+  - [x] Organization-scoped job access
+  - [x] Authentication and organization-isolation tests
+  - [x] Error handling and regression tests
+  - [x] Ruff, compilation, and test suite passing
+  - [x] Final documentation and Git review
 
 - [ ] **Milestone 5 — Applications and secure CV uploads**
   - [ ] Add application data models and endpoints.

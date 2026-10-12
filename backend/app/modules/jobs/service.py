@@ -11,8 +11,15 @@ from app.modules.jobs.schemas import (
 )
 
 
-def create_job(db: Session, job_data: JobCreate) -> Job:
-    job = Job(**job_data.model_dump())
+def create_job(
+    db: Session,
+    job_data: JobCreate,
+    organization_id: int,
+) -> Job:
+    job = Job(
+        **job_data.model_dump(),
+        organization_id=organization_id,
+    )
 
     try:
         repository.create(db, job)
@@ -25,12 +32,12 @@ def create_job(db: Session, job_data: JobCreate) -> Job:
     return job
 
 
-def list_jobs(db: Session) -> list[Job]:
-    return repository.list_all(db)
+def list_jobs(db: Session, organization_id: int) -> list[Job]:
+    return repository.list_all(db, organization_id)
 
 
-def get_job(db: Session, job_id: int) -> Job:
-    job = repository.get_by_id(db, job_id)
+def get_job(db: Session, job_id: int, organization_id: int) -> Job:
+    job = repository.get_by_id(db, job_id, organization_id)
 
     if job is None:
         raise NotFoundError(
@@ -45,8 +52,9 @@ def update_job(
     db: Session,
     job_id: int,
     job_data: JobUpdate,
+    organization_id: int,
 ) -> Job:
-    job = get_job(db, job_id)
+    job = get_job(db, job_id, organization_id)
 
     try:
         repository.update(db, job, job_data.model_dump())
@@ -63,15 +71,12 @@ def update_job_status(
     db: Session,
     job_id: int,
     status_data: JobStatusUpdate,
+    organization_id: int,
 ) -> Job:
-    job = get_job(db, job_id)
+    job = get_job(db, job_id, organization_id)
 
     try:
-        repository.update(
-            db,
-            job,
-            {"is_active": status_data.is_active},
-        )
+        repository.update(db, job, {"is_active": status_data.is_active})
         db.commit()
         db.refresh(job)
     except SQLAlchemyError:
