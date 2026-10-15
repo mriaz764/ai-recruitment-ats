@@ -48,6 +48,16 @@ def list_candidates(
     return controller.list_candidates(db, context.organization_id)
 
 
+# MUST BE BEFORE /{candidate_id}
+@router.get("/search", response_model=list[CandidateRead])
+def search_candidates(
+    q: str,
+    context: Annotated[AuthContext, Depends(get_current_context)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[Candidate]:
+    return controller.search_candidates(q, db, context.organization_id)
+
+
 @router.get("/{candidate_id}", response_model=CandidateRead)
 def get_candidate(
     candidate_id: int,

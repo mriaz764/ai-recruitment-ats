@@ -379,7 +379,14 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Add tests using fictional sample CVs.
   - [x] Store extracted `raw_text` in PostgreSQL for instant, \$0-cost keyword search.
 
-- [ ] **Milestone 7 — Structured CV parsing**
+  - [x] **Milestone 7 — Full-Text Candidate Keyword Search**
+  - [x] Implement PostgreSQL full-text search (`to_tsvector` and `.match()`) across resume raw text.
+  - [x] Add service-layer input validation and query sanitization.
+  - [x] Configure controller and router endpoints with correct path prioritization (`/search` above `/{candidate_id}`).
+  - [x] Enforce strict multi-tenant organization isolation for search results.
+  - [x] Add comprehensive integration test suite and verify passing builds.
+
+- [ ] **Milestone 7.1 — Structured CV parsing**
   - [ ] Define validated candidate-profile schemas.
   - [ ] Integrate an LLM provider behind a small provider interface.
   - [ ] Validate structured model output.

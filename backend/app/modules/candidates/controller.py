@@ -37,3 +37,11 @@ def update_candidate(
         candidate_data,
         organization_id,
     )
+
+
+def search_candidates(
+    query: str,
+    db: Session,
+    organization_id: int,
+) -> list[Candidate]:
+    return service.search_candidates(db, organization_id, query)

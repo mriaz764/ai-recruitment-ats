@@ -1,7 +1,8 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.candidates.models import Candidate
+from app.modules.candidates.resume_models import CandidateResume
 
 
 def create(db: Session, candidate: Candidate) -> Candidate:
@@ -55,3 +56,19 @@ def update(
     db.flush()
     db.refresh(candidate)
     return candidate
+
+
+def search(
+    db: Session,
+    organization_id: int,
+    query: str,
+) -> list[Candidate]:
+    statement = (
+        select(Candidate)
+        .join(CandidateResume, Candidate.id == CandidateResume.candidate_id)
+        .where(Candidate.organization_id == organization_id)
+        .where(func.to_tsvector("english", CandidateResume.raw_text).match(query))
+        .distinct()
+        .order_by(Candidate.created_at.desc())
+    )
+    return list(db.scalars(statement).all())

@@ -179,3 +179,20 @@ def update_candidate(
         _handle_database_error(exc)
 
     return candidate
+
+
+def search_candidates(
+    db: Session,
+    organization_id: int,
+    query: str,
+) -> list[Candidate]:
+    cleaned_query = query.strip()
+    if not cleaned_query:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "EMPTY_SEARCH_QUERY",
+                "message": "Search query cannot be empty.",
+            },
+        )
+    return repository.search(db, organization_id, cleaned_query)
