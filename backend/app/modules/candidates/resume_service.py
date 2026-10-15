@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import MAX_RESUME_SIZE_BYTES
 from app.modules.candidates import repository, storage
+from app.modules.candidates.extractor import CVTextExtractorService
 from app.modules.candidates.resume_models import CandidateResume
 
 logger = logging.getLogger(__name__)
@@ -157,6 +158,22 @@ async def upload_resume(
     extension = _validate_resume(content, filename)
     storage_key = storage.save_resume(content, extension)
 
+    # Extract raw text for manual full-text search and future AI pipelines
+    try:
+        file_path = storage.get_resume_path(storage_key)
+        extractor = CVTextExtractorService()
+        extraction_result = extractor.extract_from_path(file_path)
+        raw_text = extraction_result.text
+    except Exception:
+        try:
+            storage.delete_resume(storage_key)
+        except OSError:
+            logger.exception(
+                "Failed to clean up resume file after extraction failure: %s",
+                storage_key,
+            )
+        raise
+
     resume = CandidateResume(
         candidate_id=candidate.id,
         original_filename=filename,
@@ -167,6 +184,7 @@ async def upload_resume(
             else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         ),
         file_size=len(content),
+        raw_text=raw_text,
     )
 
     try:

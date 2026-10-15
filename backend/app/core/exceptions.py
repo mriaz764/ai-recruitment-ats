@@ -44,3 +44,19 @@ class ConflictError(AppError):
             code=code,
             status_code=409,
         )
+
+
+class CVExtractionError(AppError):
+    """Raised when CV text extraction fails due to format, corruption, or content issues."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str = "CV_EXTRACTION_FAILED",
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            status_code=400,
+        )

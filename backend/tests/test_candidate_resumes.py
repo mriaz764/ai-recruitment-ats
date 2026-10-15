@@ -21,6 +21,28 @@ def resume_storage_dir(tmp_path, monkeypatch):
     return tmp_path
 
 
+@pytest.fixture(autouse=True)
+def mock_cv_extractor(monkeypatch):
+    """Automatically mock CV text extraction for candidate resume integration tests."""
+    from app.modules.candidates.extractor import (
+        CVExtractionResult,
+        CVTextExtractorService,
+        SupportedFormat,
+    )
+
+    def mock_extract(self, file_path):
+        ext = file_path.suffix.lower().lstrip(".")
+        fmt = SupportedFormat.DOCX if ext == "docx" else SupportedFormat.PDF
+        return CVExtractionResult(
+            text="Mocked candidate resume text containing skills and experience.",
+            char_count=60,
+            word_count=8,
+            file_format=fmt,
+        )
+
+    monkeypatch.setattr(CVTextExtractorService, "extract_from_path", mock_extract)
+
+
 def create_docx_content() -> bytes:
     buffer = BytesIO()
 
