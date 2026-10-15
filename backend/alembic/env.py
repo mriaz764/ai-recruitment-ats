@@ -1,11 +1,14 @@
 
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import create_engine, pool
 
+from alembic import context
 from app.core.config import DATABASE_URL
 from app.db.session import Base
+from app.modules.applications.models import JobApplication  # noqa: F401
+from app.modules.candidates.models import Candidate  # noqa: F401
+from app.modules.candidates.resume_models import CandidateResume  # noqa: F401
 from app.modules.jobs.models import Job  # noqa: F401
 from app.modules.organizations.models import (  # noqa: F401
     Membership,

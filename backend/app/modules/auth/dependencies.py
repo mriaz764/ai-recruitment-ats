@@ -47,6 +47,7 @@ def get_current_context(
             credentials.credentials,
             AUTH_SECRET_KEY,
             algorithms=["HS256"],
+            options={"require": ["exp", "sub", "org_id"]},
         )
         user_id = int(payload["sub"])
         organization_id = int(payload["org_id"])

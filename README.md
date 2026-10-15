@@ -8,31 +8,35 @@ The goal is to build a maintainable recruitment platform while learning backend 
 
 ## Project status
 
-The project is under active development. The backend foundation and first Jobs API are implemented.
+The project is under active development. The backend includes job management,
+authentication, organization-level authorization, candidate management,
+private resume handling, and application workflows.
 
 ### Implemented
 
-- FastAPI application with a health endpoint.
-- PostgreSQL 17 running through Docker Compose.
-- SQLAlchemy 2.x engine, session factory, ORM base, and request-scoped database dependency.
-- Feature-first Jobs module using `router → controller → service → repository`.
-- Pydantic request and response schemas.
-- Create and list job endpoints.
-- Alembic migrations for the Jobs table baseline and a follow-up index cleanup.
-- Automated tests for health, job creation, job listing, and invalid job input.
-- Ruff linting and formatting checks.
+- FastAPI application and health endpoint.
+- PostgreSQL 17 through Docker Compose.
+- SQLAlchemy 2.x database setup and request-scoped sessions.
+- Feature-first modules following `router → controller → service → repository`.
+- Job creation, listing, detail, update, activation, and deactivation.
+- User registration and login with JWT access tokens.
+- Secure password hashing and organization membership checks.
+- Organization-scoped access to protected resources.
+- Candidate management.
+- Resume upload/download handling with validation, size limits, and private storage.
+- Application creation, listing, detail, status updates, and duplicate prevention.
+- Alembic migrations, automated tests, and Ruff linting/formatting.
 
-### Not implemented yet
+### Remaining work
 
-- Authentication or organization/tenant authorization.
-- Job detail, update, publish, or close endpoints.
-- Applications, candidate records, and CV uploads.
-- CV text extraction or structured CV parsing.
-- Candidate matching, embeddings, RAG, or AI agent workflows.
-- Frontend dashboard.
-- Production deployment and production secret management.
+- CV text extraction and structured CV parsing.
+- Candidate-to-job matching, embeddings, RAG, and AI agent workflows.
+- Frontend recruiter dashboard.
+- Production deployment, monitoring, and production security review.
 
-This is not yet production-ready recruitment software.
+This is an actively developed learning project, not yet production-ready
+recruitment software. Review the roadmap and run the verification commands
+before treating any milestone as complete.
 
 ## Technology stack
 
@@ -358,11 +362,15 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Ruff, compilation, and test suite passing
   - [x] Final documentation and Git review
 
-- [ ] **Milestone 5 — Applications and secure CV uploads**
-  - [ ] Add application data models and endpoints.
-  - [ ] Add CV upload validation and size limits.
-  - [ ] Store CVs privately and save file metadata.
-  - [ ] Add authorization checks for CV access.
+- [x] **Milestone 5 — Candidates, applications, and secure CV uploads**
+  - [x] Implement candidate management.
+  - [x] Implement application creation, listing, detail, and status updates.
+  - [x] Validate resume uploads and enforce file-size limits.
+  - [x] Store resumes privately and validate storage keys.
+  - [x] Add authorization checks for protected resources.
+  - [x] Add tests for successful operations and failure paths.
+  - [x] Add Milestone 5 learning notes.
+
 
 - [ ] **Milestone 6 — CV text extraction**
   - [ ] Extract text from PDF files.
@@ -433,6 +441,9 @@ Recruitment can materially affect people's lives. Future AI features must be bui
 - [`doc/MILESTONE_01_LEARNING_NOTES.md`](doc/MILESTONE_01_LEARNING_NOTES.md) — initial backend foundation.
 - [`doc/MILESTONE_02_LEARNING_NOTES.md`](doc/MILESTONE_02_LEARNING_NOTES.md) — PostgreSQL, SQLAlchemy, Alembic, Jobs architecture, and tests.
 - [Milestone 3 Learning Notes](doc/MILESTONE_03_LEARNING_NOTES.md)
+- [Milestone 4 Learning Notes](doc/MILESTONE_04_LEARNING_NOTES.md)
+- [Milestone 5 Learning Notes](doc/MILESTONE_05_LEARNING_NOTES.md)
+- [Error Handling Learning Notes](doc/ERROR_HANDLING_LEARNING_NOTES.md)
 
 ## Final product vision
 
