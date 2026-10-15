@@ -26,10 +26,10 @@ private resume handling, and application workflows.
 - Resume upload/download handling with validation, size limits, and private storage.
 - Application creation, listing, detail, status updates, and duplicate prevention.
 - Alembic migrations, automated tests, and Ruff linting/formatting.
+- CV text extraction and structured CV parsing.
 
 ### Remaining work
 
-- CV text extraction and structured CV parsing.
 - Candidate-to-job matching, embeddings, RAG, and AI agent workflows.
 - Frontend recruiter dashboard.
 - Production deployment, monitoring, and production security review.
@@ -372,11 +372,12 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Add Milestone 5 learning notes.
 
 
-- [ ] **Milestone 6 — CV text extraction**
-  - [ ] Extract text from PDF files.
-  - [ ] Extract text from DOCX files.
-  - [ ] Handle invalid, empty, and unreadable files.
-  - [ ] Add tests using fictional sample CVs.
+  - [x] **Milestone 6 — CV text extraction**
+  - [x] Extract text from PDF files.
+  - [x] Extract text from DOCX files.
+  - [x] Handle invalid, empty, and unreadable files.
+  - [x] Add tests using fictional sample CVs.
+  - [x] Store extracted `raw_text` in PostgreSQL for instant, \$0-cost keyword search.
 
 - [ ] **Milestone 7 — Structured CV parsing**
   - [ ] Define validated candidate-profile schemas.
