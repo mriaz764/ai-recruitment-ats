@@ -372,33 +372,33 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Add Milestone 5 learning notes.
 
 
-  - [x] **Milestone 6 — CV text extraction**
+- [x] **Milestone 6 — CV text extraction**
   - [x] Extract text from PDF files.
   - [x] Extract text from DOCX files.
   - [x] Handle invalid, empty, and unreadable files.
   - [x] Add tests using fictional sample CVs.
   - [x] Store extracted `raw_text` in PostgreSQL for instant, \$0-cost keyword search.
 
-  - [x] **Milestone 7 — Full-Text Candidate Keyword Search**
+- [x] **Milestone 7 — Full-Text Candidate Keyword Search**
   - [x] Implement PostgreSQL full-text search (`to_tsvector` and `.match()`) across resume raw text.
   - [x] Add service-layer input validation and query sanitization.
   - [x] Configure controller and router endpoints with correct path prioritization (`/search` above `/{candidate_id}`).
   - [x] Enforce strict multi-tenant organization isolation for search results.
   - [x] Add comprehensive integration test suite and verify passing builds.
 
-- [ ] **Milestone 7.1 — Structured CV parsing**
+- [x] **Milestone 8 — Transparent Job Matching & Evidence-Based Scoring**
+  - [x] Implement deterministic scoring engine evaluating candidates against job-specific criteria with weighted keywords.
+  - [x] Add sentence-level evidence extraction from resume `raw_text` for transparent, explainable feedback.
+  - [x] Configure Alembic database migration, SQLAlchemy 2.0 models (`JobMatchCriteria`), repository, service, controller, and router.
+  - [x] Enforce strict multi-tenant organization isolation across all matching criteria and job endpoints.
+  - [x] Write and verify comprehensive integration test suite (`test_job_matching.py`) ensuring all tests pass successfully.
+
+- [ ] **Milestone 8.1 — Structured CV parsing**
   - [ ] Define validated candidate-profile schemas.
   - [ ] Integrate an LLM provider behind a small provider interface.
   - [ ] Validate structured model output.
   - [ ] Handle missing or ambiguous information without inventing facts.
   - [ ] Add mocked tests that do not require paid API calls.
-
-- [ ] **Milestone 8 — Transparent job matching**
-  - [ ] Define job-related criteria and weights.
-  - [ ] Implement deterministic matching and scoring.
-  - [ ] Return score breakdowns and supporting CV evidence.
-  - [ ] Evaluate ranking quality using fictional or properly authorized examples.
-  - [ ] Keep final hiring decisions with human reviewers.
 
 - [ ] **Milestone 9 — Next.js recruiter dashboard**
   - [ ] Initialize the Next.js frontend.
