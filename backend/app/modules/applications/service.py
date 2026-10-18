@@ -13,6 +13,7 @@ def create_application(
     candidate_id: int,
     job_id: int,
     organization_id: int,
+    notes: str | None = None,
 ) -> JobApplication:
     candidate = db.get(Candidate, candidate_id)
 
@@ -48,6 +49,7 @@ def create_application(
         candidate_id=candidate_id,
         job_id=job_id,
         status="applied",
+        notes=notes,
     )
 
     try:
@@ -75,8 +77,9 @@ def create_application(
 def list_applications(
     db: Session,
     organization_id: int,
+    job_id: int | None = None,
 ) -> list[JobApplication]:
-    return repository.list_all(db, organization_id)
+    return repository.list_all(db, organization_id, job_id=job_id)
 
 
 def get_application(
@@ -101,6 +104,7 @@ def update_application_status(
     application_id: int,
     organization_id: int,
     status: str,
+    notes: str | None = None,
 ) -> JobApplication:
     application = repository.get_by_id(
         db=db,
@@ -111,7 +115,13 @@ def update_application_status(
     if application is None:
         raise NotFoundError("Application not found.", code="APPLICATION_NOT_FOUND")
 
-    application.status = status
+    # Delegate mutation to the repository layer
+    repository.update_status_and_notes(
+        db=db,
+        application=application,
+        status=status,
+        notes=notes,
+    )
 
     try:
         db.commit()

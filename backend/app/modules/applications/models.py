@@ -5,10 +5,11 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    Text,
     UniqueConstraint,
     func,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
 
@@ -26,6 +27,7 @@ class JobApplication(Base):
         Index("ix_applications_organization_id", "organization_id"),
         Index("ix_applications_candidate_id", "candidate_id"),
         Index("ix_applications_job_id", "job_id"),
+        Index("ix_applications_job_status", "job_id", "status"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -52,6 +54,11 @@ class JobApplication(Base):
         server_default="applied",
     )
 
+    notes: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     applied_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -64,3 +71,8 @@ class JobApplication(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+
+    # ORM Relationships for clean joining and eager loading
+    organization = relationship("Organization")
+    candidate = relationship("Candidate")
+    job = relationship("Job")

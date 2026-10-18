@@ -1,0 +1,66 @@
+# Milestone 9: Candidate Pipeline & Stage Management — Learning & Interview Guide
+
+This guide breaks down the core architectural patterns, design choices, database constraints, and module-specific interview questions for **Milestone 9** of our Applicant Tracking System (ATS).
+
+---
+
+## 🏗️ 1. Architecture & Layered Separation
+We follow a strict **4-Layer Architecture** to maintain clean separation of concerns, testability, and scalability:
+
+Router (HTTP/FastAPI)
+└──> Controller (Orchestration & Status Codes)
+└──> Service (Business Logic & Domain Validation)
+└──> Repository (Database Queries & Multi-tenancy)
+└──> Models & Schemas (SQLAlchemy & Pydantic v2)
+
+
+* **Router (`router.py`)**: Handles HTTP routes, dependency injection (FastAPI `Depends`, `Annotated`), and maps request/response models.
+* **Controller (`controller.py`)**: Orchestrates calls to the service layer and acts as a bridge without containing business rules.
+* **Service (`service.py`)**: Enforces business rules (e.g., checking if a job is active, validating cross-tenant records, handling duplicate protection).
+* **Repository (`repository.py`)**: Pure database interactions using SQLAlchemy 2.0 paradigms (`select`, `scalars`, `flush`).
+
+---
+## 🔐 2. Key Technical Concepts & Implementation Details
+
+### A. Strict Multi-Tenant Isolation
+Every record in `JobApplication` is strictly scoped by `organization_id`. 
+* **Why?** In a multi-tenant SaaS ATS, Company A must never view, update, or interact with candidate applications belonging to Company B.
+* **How?** Foreign keys reference organization contexts, and every repository query explicitly applies `.where(JobApplication.organization_id == organization_id)`.
+
+### B. Composite Unique Constraints (`UniqueConstraint`)
+To prevent data corruption (e.g., a candidate applying to the same job multiple times), we enforced a database-level unique constraint:
+```python
+UniqueConstraint(
+    "organization_id",
+    "candidate_id",
+    "job_id",
+    name="uq_application_organization_candidate_job",
+)
+Interview Insight: We handle this at two levels:
+
+Proactive Check: In the service layer via repository.get_by_candidate_and_job(...) to return a clean 409 Conflict.
+
+Reactive Catch: Catching database-level IntegrityError and mapping it to a ConflictError to safeguard against concurrent race conditions.
+
+C. Type Safety with Pydantic v2 Literal
+Stage transitions (applied, screening, interview, offer, hired, rejected) are strictly bounded using Python's Literal:
+
+ApplicationStatus = Literal["applied", "screening", "interview", "offer", "hired", "rejected"]
+Benefit: FastAPI automatically validates incoming status values at the API boundary, returning a 422 Unprocessable Entity if an invalid stage is provided.
+
+🎤 3. Module-Specific Interview Q&A
+Q1: How do you handle multi-tenant isolation in a FastAPI application with SQLAlchemy?
+Sample Answer:
+"We isolate tenants at both the authentication and database query levels. First, our auth dependency injects the current user's organization_id into the request context. Second, every repository method mandates organization_id as a filter parameter in SQLAlchemy queries (e.g., .where(JobApplication.organization_id == organization_id)). This guarantees that even if an application ID is guessed, queries scoped to another organization return a 404 Not Found or empty list, preventing unauthorized horizontal data access."
+
+Q2: How do you prevent a candidate from applying to the same job twice, especially under concurrent request loads?
+Sample Answer:
+"We use a two-pronged defense strategy. At the application layer, our service checks if an application already exists for that specific (candidate_id, job_id, organization_id) combination. However, application-level checks can fail due to race conditions during high-concurrency spikes. Therefore, we enforce a database-level composite UniqueConstraint on those three columns. In our service layer, we wrap database commits in a try-except block catching SQLAlchemy's IntegrityError, matching the constraint name, and cleanly throwing a domain-specific 409 Conflict exception."
+
+Q3: Why separate the Controller layer from the Service layer in FastAPI? Isn't it extra boilerplate?
+Sample Answer:
+"While small apps can combine them, separating Controllers and Services scales maintainability. The Service layer contains pure business logic, database transactions, and domain guardrails, making it completely decoupled from HTTP frameworks. It can be tested independently or invoked via background workers or CLI scripts. The Controller layer handles request orchestration, translating domain results into response shapes. This clear boundary makes our codebase much easier to refactor, test, and scale."
+
+Q4: Walk me through how you handled database transaction rollbacks when an unexpected error occurs.
+Sample Answer:
+"In our service layer, when executing state-modifying operations (like creation or status updates), we wrap database commits in explicit try-except blocks. If an IntegrityError or general SQLAlchemyError occurs during db.commit(), we immediately invoke db.rollback() on the session. This prevents dirty or partial states from persisting in the session cache and guarantees atomicity. In our test suite, we explicitly verify this behavior by mocking db.commit to raise a SQLAlchemyError and asserting that no record was written to the database."

@@ -393,14 +393,14 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Enforce strict multi-tenant organization isolation across all matching criteria and job endpoints.
   - [x] Write and verify comprehensive integration test suite (`test_job_matching.py`) ensuring all tests pass successfully.
 
-- [ ] **Milestone 8.1 — Structured CV parsing**
-  - [ ] Define validated candidate-profile schemas.
-  - [ ] Integrate an LLM provider behind a small provider interface.
-  - [ ] Validate structured model output.
-  - [ ] Handle missing or ambiguous information without inventing facts.
-  - [ ] Add mocked tests that do not require paid API calls.
+- [x] **Milestone 9 — Candidate Pipeline & Stage Management**
+  - [x] Implement database models and Alembic migrations for `JobApplication` with multi-tenant scoping (`organization_id`), unique composite constraints, and automated timestamps.
+  - [x] Support recruiter `notes` and strict `Literal` status transitions (`applied`, `screening`, `interview`, `offer`, `hired`, `rejected`).
+  - [x] Establish strict 4-layer architecture (`Router`, `Controller`, `Service`, `Repository`, `Schemas`) with explicit Pydantic v2 validation.
+  - [x] Enforce business guardrails, including active job verification, duplicate application prevention, and cross-tenant security.
+  - [x] Write and verify comprehensive integration test suite (`test_applications.py`) covering tenant isolation, role dependencies, status workflows, and transaction rollbacks.
 
-- [ ] **Milestone 9 — Next.js recruiter dashboard**
+- [ ] **Milestone 9.1 — Next.js recruiter dashboard**
   - [ ] Initialize the Next.js frontend.
   - [ ] Build the recruiter dashboard and job management UI.
   - [ ] Display applications and candidate evidence.

@@ -34,6 +34,7 @@ def create_application(
         candidate_id=payload.candidate_id,
         job_id=payload.job_id,
         organization_id=context.organization_id,
+        notes=payload.notes,
     )
 
 
@@ -76,4 +77,5 @@ def update_application_status(
         application_id=application_id,
         organization_id=context.organization_id,
         status=payload.status,
+        notes=payload.notes,
     )
