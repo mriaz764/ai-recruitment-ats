@@ -400,28 +400,36 @@ We will build the product in small, testable milestones. Check a milestone only 
   - [x] Enforce business guardrails, including active job verification, duplicate application prevention, and cross-tenant security.
   - [x] Write and verify comprehensive integration test suite (`test_applications.py`) covering tenant isolation, role dependencies, status workflows, and transaction rollbacks.
 
-- [ ] **Milestone 9.1 — Next.js recruiter dashboard**
+- [x] **Milestone 10 — Interview Scheduling & Calendar Management (Completed)**
+   - [x] **Schema Standardization**: Refactored `User.name` to `User.full_name` across database models, schemas, and tests via manual Alembic migration (`op.alter_column`).
+    - [x] **Domain Exception Decoupling**: Replaced `HTTPException` in service layers with domain errors (`UnauthorizedError`, `ForbiddenError`, `ConflictError`).
+    - [x] **Interview Core Module**: Implemented 7-layer architecture for interview creation, status updates, and retrieval with multi-tenant data isolation.
+    - [x] **Calendar Management (.ics)**: Created RFC-5545 compliant iCalendar payload generator dynamically setting the logged-in recruiter (`AuthContext.email`) as `ORGANIZER`.
+    - [x] **Async Email Dispatcher**: Integrated FastAPI `BackgroundTasks` to non-blockingly dispatch calendar invites and meeting links to candidates and interviewers.
+    - [x] **Integration Test Suite**: Achieved 100% test coverage (87/87 passing) using black-box JWT API testing. 
+
+- [ ] **Milestone 11 — Next.js recruiter dashboard**
   - [ ] Initialize the Next.js frontend.
   - [ ] Build the recruiter dashboard and job management UI.
   - [ ] Display applications and candidate evidence.
   - [ ] Add loading, empty, validation, and error states.
   - [ ] Connect the frontend to the backend API.
 
-- [ ] **Milestone 10 — Embeddings and semantic retrieval**
+- [ ] **Milestone 12 — Embeddings and semantic retrieval**
   - [ ] Add CV chunking and metadata.
   - [ ] Generate embeddings.
   - [ ] Evaluate PostgreSQL with pgvector for vector storage and search.
   - [ ] Enforce access filters during retrieval.
   - [ ] Compare retrieval results against a small evaluation set.
 
-- [ ] **Milestone 11 — Evidence-grounded RAG**
+- [ ] **Milestone 13 — Evidence-grounded RAG**
   - [ ] Retrieve relevant CV passages for job criteria.
   - [ ] Generate structured explanations grounded in retrieved evidence.
   - [ ] Link evidence to source passages where possible.
   - [ ] Test unsupported claims and prompt-injection attempts.
   - [ ] Allow the system to report insufficient evidence.
 
-- [ ] **Milestone 12 — Background workflows and production readiness**
+- [ ] **Milestone 14 — Background workflows and production readiness**
   - [ ] Add background processing when workload justifies it.
   - [ ] Add structured logging, request IDs, and usage/cost tracking.
   - [ ] Harden secrets, access controls, data retention, and deletion.

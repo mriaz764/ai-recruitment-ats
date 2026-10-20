@@ -4,18 +4,15 @@ from app.modules.auth import service
 from app.modules.auth.schemas import AuthResponse, LoginRequest, RegisterRequest
 
 
-def register(data: RegisterRequest, db: Session) -> AuthResponse:
+def register(schema: RegisterRequest, db: Session) -> AuthResponse:
     return service.register(
         db,
-        email=data.email,
-        password=data.password,
-        organization_name=data.organization_name,
+        schema=schema,
     )
 
 
-def login(data: LoginRequest, db: Session) -> AuthResponse:
+def login(schema: LoginRequest, db: Session) -> AuthResponse:
     return service.login(
         db,
-        email=data.email,
-        password=data.password,
+        schema=schema,
     )

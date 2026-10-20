@@ -71,8 +71,7 @@ def test_match_candidates_with_evidence(
     db_session.flush()
 
     # Pass only the valid attributes accepted by CandidateResume
-   
-   
+
     resume = CandidateResume(
         candidate_id=candidate.id,
         storage_key="s3://resumes/resume.pdf",
@@ -83,9 +82,6 @@ def test_match_candidates_with_evidence(
     )
     db_session.add(resume)
     db_session.flush()
-
-
-    
 
     response = client.get(f"/jobs/{job.id}/matches")
     assert response.status_code == 200

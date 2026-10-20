@@ -16,12 +16,16 @@ ApplicationStatus = Literal[
 class ApplicationCreate(BaseModel):
     candidate_id: int = Field(gt=0)
     job_id: int = Field(gt=0)
-    notes: str | None = Field(default=None, description="Optional initial recruiter notes")
+    notes: str | None = Field(
+        default=None, description="Optional initial recruiter notes"
+    )
 
 
 class ApplicationStatusUpdate(BaseModel):
     status: ApplicationStatus
-    notes: str | None = Field(default=None, description="Optional notes or feedback for this stage transition")
+    notes: str | None = Field(
+        default=None, description="Optional notes or feedback for this stage transition"
+    )
 
 
 class ApplicationRead(BaseModel):

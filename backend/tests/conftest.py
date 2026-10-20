@@ -30,6 +30,7 @@ def test_identity(db_session):
     organization = Organization(name="Test Organization")
     user = User(
         email="owner@example.com",
+        full_name="Test User",
         password_hash=hash_password("TestPassword123!"),
         is_active=True,
     )

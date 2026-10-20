@@ -29,6 +29,7 @@ def test_register_creates_user_and_organization(client):
         "/auth/register",
         json={
             "email": "newuser@example.com",
+            "full_name": "Muhammad Riaz",
             "password": "SecurePassword123!",
             "organization_name": "New Recruitment Team",
         },
@@ -37,6 +38,7 @@ def test_register_creates_user_and_organization(client):
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == "newuser@example.com"
+    assert data["full_name"] == "Muhammad Riaz"
     assert data["organization_name"] == "New Recruitment Team"
     assert data["role"] == "owner"
     assert data["token_type"] == "bearer"
@@ -46,6 +48,7 @@ def test_register_creates_user_and_organization(client):
 def test_register_rejects_duplicate_email(client):
     payload = {
         "email": "duplicate@example.com",
+        "full_name": "Muhammad Riaz",
         "password": "SecurePassword123!",
         "organization_name": "Recruitment Team",
     }
@@ -63,6 +66,7 @@ def test_login_returns_access_token(client):
         json={
             "email": "loginuser@example.com",
             "password": "SecurePassword123!",
+            "full_name": "Muhammad Riaz",
             "organization_name": "Login Test Team",
         },
     )

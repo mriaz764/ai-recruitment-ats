@@ -46,6 +46,38 @@ class ConflictError(AppError):
         )
 
 
+class UnauthorizedError(AppError):
+    """Raised when authentication fails or credentials are invalid."""
+
+    def __init__(
+        self,
+        message: str = "Authentication required.",
+        *,
+        code: str = "UNAUTHORIZED",
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            status_code=401,
+        )
+
+
+class ForbiddenError(AppError):
+    """Raised when an authenticated user lacks required permissions."""
+
+    def __init__(
+        self,
+        message: str = "Access denied.",
+        *,
+        code: str = "FORBIDDEN",
+    ) -> None:
+        super().__init__(
+            message,
+            code=code,
+            status_code=403,
+        )
+
+
 class CVExtractionError(AppError):
     """Raised when CV text extraction fails due to format, corruption, or content issues."""
 

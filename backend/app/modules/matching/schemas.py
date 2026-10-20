@@ -4,7 +4,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class JobMatchCriteriaCreate(BaseModel):
     criterion_name: str = Field(..., min_length=1, max_length=100)
     weight: float = Field(default=1.0, gt=0.0)
-    keywords: str = Field(..., description="Comma-separated keywords, e.g. python, fastapi, postgresql")
+    keywords: str = Field(
+        ..., description="Comma-separated keywords, e.g. python, fastapi, postgresql"
+    )
 
 
 class JobMatchCriteriaRead(BaseModel):

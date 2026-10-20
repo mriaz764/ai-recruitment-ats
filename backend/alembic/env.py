@@ -16,6 +16,7 @@ from app.modules.organizations.models import (  # noqa: F401
     Organization,
     User,
 )
+from app.modules.interviews.models import Interview, InterviewInterviewer # noqa: F401
 
 config = context.config
 
