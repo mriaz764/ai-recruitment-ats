@@ -1,19 +1,14 @@
 import { apiClient } from "@/lib/api";
-import { Candidate, CandidateResume } from "@/types/api";
+import { Candidate, PaginatedResponse } from "@/types";
 
-export const candidatesService = {
-  async getCandidates(): Promise<Candidate[]> {
-    return apiClient.get<Candidate[]>("/candidates/");
+export const candidateService = {
+  async getCandidates(params?: { limit?: number; skip?: number }): Promise<PaginatedResponse<Candidate>> {
+    return apiClient.get<PaginatedResponse<Candidate>>("/candidates", { params });
   },
 
-  async searchCandidates(query: string): Promise<Candidate[]> {
-    return apiClient.get<Candidate[]>(`/candidates/search?q=${encodeURIComponent(query)}`);
-  },
-
-  async uploadResume(candidateId: number, file: File): Promise<CandidateResume> {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    return apiClient.post<CandidateResume>(`/candidates/${candidateId}/resumes`, formData);
+  async getCandidateById(id: number | string): Promise<Candidate> {
+    return apiClient.get<Candidate>(`/candidates/${id}`);
   },
 };
+
+export const candidatesService = candidateService;

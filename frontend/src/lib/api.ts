@@ -1,94 +1,92 @@
 import { env } from "@/lib/config/env";
 
-type RequestOptions = RequestInit & {
-  auth?: boolean;
-};
+export interface RequestOptions extends Omit<RequestInit, "body"> {
+  body?: any;
+  params?: Record<string, string | number | boolean | undefined | null>;
+}
 
-export const apiClient = {
-  async request<T>(
-    path: string,
-    options: RequestOptions = {},
-  ): Promise<T> {
-    const { headers, body, ...requestOptions } = options;
+class ApiClient {
+  private baseUrl: string;
 
-    const requestHeaders = new Headers(headers);
+  constructor(baseUrl: string) {
+    this.baseUrl = baseUrl;
+  }
 
-    // Auto-set Content-Type to JSON unless sending FormData or URLSearchParams
-    if (
-      !requestHeaders.has("Content-Type") && 
-      !(body instanceof FormData) && 
-      !(body instanceof URLSearchParams)
-    ) {
-      requestHeaders.set("Content-Type", "application/json");
+  private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    const { params, body, headers: customHeaders, ...customConfig } = options;
+
+    let url = `${this.baseUrl}${endpoint}`;
+
+    // Parse and serialize query parameters if present
+    if (params) {
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, String(value));
+        }
+      });
+      const queryString = searchParams.toString();
+      if (queryString) {
+        url += url.includes("?") ? `&${queryString}` : `?${queryString}`;
+      }
     }
 
-    const url = `${env.NEXT_PUBLIC_API_URL}${path}`;
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      ...customHeaders,
+    };
 
-    const response = await fetch(url, {
-      ...requestOptions,
-      body: body as BodyInit | null | undefined,
-      headers: requestHeaders,
-      credentials: "include",
-    });
+    const config: RequestInit = {
+      ...customConfig,
+      headers,
+    };
+
+    if (body) {
+      if (body instanceof URLSearchParams || body instanceof FormData) {
+        config.body = body;
+        if (body instanceof FormData) {
+          delete (headers as Record<string, string>)["Content-Type"];
+        }
+      } else {
+        config.body = JSON.stringify(body);
+      }
+    }
+
+    const response = await fetch(url, config);
 
     if (!response.ok) {
-      let message = `HTTP ${response.status}: An unexpected error occurred`;
-
-      try {
-        const errorBody = await response.json();
-
-        if (errorBody?.detail) {
-          if (typeof errorBody.detail === "string") {
-            message = errorBody.detail;
-          } else if (Array.isArray(errorBody.detail) && errorBody.detail.length > 0) {
-            message = errorBody.detail.map((err: { msg: string }) => err.msg).join(", ");
-          }
-        } else if (typeof errorBody?.message === "string") {
-          message = errorBody.message;
-        }
-      } catch {
-        // Keep default status message if body is unparseable
-      }
-
-      throw new Error(message);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(
+        errorData.detail || errorData.message || `HTTP error! status: ${response.status}`
+      );
     }
 
     if (response.status === 204) {
-      return undefined as T;
+      return {} as T;
     }
 
-    return response.json() as Promise<T>;
-  },
+    return response.json();
+  }
 
-  get<T>(path: string, options?: RequestOptions) {
-    return apiClient.request<T>(path, {
-      ...options,
-      method: "GET",
-    });
-  },
+  public get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "GET" });
+  }
 
-  post<T>(path: string, body?: unknown, options?: RequestOptions) {
-    const isRawBody = body instanceof FormData || body instanceof URLSearchParams;
-    return apiClient.request<T>(path, {
-      ...options,
-      method: "POST",
-      body: isRawBody ? (body as BodyInit) : body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  },
+  public post<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "POST", body });
+  }
 
-  put<T>(path: string, body?: unknown, options?: RequestOptions) {
-    const isRawBody = body instanceof FormData || body instanceof URLSearchParams;
-    return apiClient.request<T>(path, {
-      ...options,
-      method: "PUT",
-      body: isRawBody ? (body as BodyInit) : body !== undefined ? JSON.stringify(body) : undefined,
-    });
-  },
+  public put<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "PUT", body });
+  }
 
-  delete<T>(path: string, options?: RequestOptions) {
-    return apiClient.request<T>(path, {
-      ...options,
-      method: "DELETE",
-    });
-  },
-};
+  public patch<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "PATCH", body });
+  }
+
+  public delete<T>(endpoint: string, options?: RequestOptions): Promise<T> {
+    return this.request<T>(endpoint, { ...options, method: "DELETE" });
+  }
+}
+
+export const apiClient = new ApiClient(env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1");

@@ -1,145 +1,122 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import {
-  AtSign,
-  Lock,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  AlertCircle,
-} from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ROUTES } from "@/lib/routes";
 
-export default function LoginPage() {
+function LoginFormContent() {
   const { login, isLoading } = useAuth();
   const searchParams = useSearchParams();
-  const redirectPath = searchParams.get("redirect");
+  const router = useRouter();
+
+  const redirectPath = searchParams.get("redirect") || ROUTES.DASHBOARD.HOME;
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email || !password) {
-      setError("Please enter both email and password.");
-      return;
-    }
-
     try {
-      // FastAPI OAuth2 password flow expects email as the 'username' field
       await login({ username: email, password });
+      router.push(redirectPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid credentials.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to sign in. Please check your credentials.",
+      );
     }
   };
 
   return (
-    <div className="w-full max-w-md p-8 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
-      {/* Header */}
-      <div className="mb-8 text-center">
-        <h1 className="text-2xl font-bold text-slate-100">Welcome Back</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Sign in to access your recruitment pipeline
-        </p>
-      </div>
-
-      {/* Redirect Notification */}
-      {redirectPath && !error && (
-        <div className="mb-6 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>Please log in to access requested page.</span>
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
+      <div className="w-full max-w-md space-y-6 bg-slate-900/80 p-8 rounded-2xl border border-slate-800 shadow-xl">
+        <div className="text-center space-y-2">
+          <h1 className="text-2xl font-bold text-slate-100">
+            Sign in to your account
+          </h1>
+          <p className="text-sm text-slate-400">
+            Welcome back to AI Recruitment ATS
+          </p>
         </div>
-      )}
 
-      {/* Error Alert */}
-      {error && (
-        <div className="mb-6 p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
+        {error && (
+          <div className="p-3 text-xs rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-center">
+            {error}
+          </div>
+        )}
 
-      {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Work Email
-          </label>
-          <div className="relative">
-            <AtSign className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              Email Address
+            </label>
             <input
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="recruiter@company.com"
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm transition-colors"
             />
           </div>
-        </div>
 
-        <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-            Password
-          </label>
-          <div className="relative">
-            <Lock className="w-5 h-5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+              Password
+            </label>
             <input
-              type={showPassword ? "text" : "password"}
+              type="password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              required
-              className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-10 py-2.5 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm transition-colors"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-            >
-              {showPassword ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </button>
           </div>
-        </div>
 
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 rounded-lg text-sm transition-all shadow-lg shadow-blue-600/25 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-        >
-          {isLoading ? (
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <>
-              <span>Sign In</span>
-              <ArrowRight className="w-4 h-4" />
-            </>
-          )}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-sm rounded-lg transition-colors shadow-lg shadow-blue-600/20"
+          >
+            {isLoading ? "Signing in..." : "Sign In"}
+          </button>
+        </form>
 
-      {/* Footer Navigation */}
-      <div className="mt-8 text-center text-xs text-slate-400">
-        Don&apos;t have an account?{" "}
-        <Link
-          href={ROUTES.AUTH.REGISTER}
-          className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
-        >
-          Create Organization
-        </Link>
+        <p className="text-center text-xs text-slate-400">
+          Don&apos;t have an account?{" "}
+          <Link
+            href={ROUTES.AUTH.REGISTER}
+            className="text-blue-400 hover:underline"
+          >
+            Register here
+          </Link>
+        </p>
       </div>
     </div>
+  );
+}
+
+// Top-level page export wrapped in Suspense for static build compliance
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-400">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium">Loading Login...</p>
+          </div>
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
   );
 }

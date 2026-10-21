@@ -8,15 +8,16 @@ export interface JobMatchCriteria {
 
 export interface Job {
   id: number;
+  organization_id: number;
   title: string;
   description: string;
   department?: string;
   location?: string;
   employment_type?: string;
   is_active: boolean;
-  organization_id: number;
+  status: "draft" | "active" | "archived" | "closed";
   created_at: string;
-  criteria?: JobMatchCriteria[];
+  updated_at?: string;
 }
 
 export interface CreateJobPayload {
@@ -25,9 +26,4 @@ export interface CreateJobPayload {
   department?: string;
   location?: string;
   employment_type?: string;
-  criteria?: Array<{
-    keyword: string;
-    weight: number;
-    is_required: boolean;
-  }>;
 }

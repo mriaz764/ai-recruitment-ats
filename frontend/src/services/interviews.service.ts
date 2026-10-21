@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api";
-import { Interview, ScheduleInterviewPayload } from "@/types/api";
+import { Interview, ScheduleInterviewPayload } from "@/types";
 
 export const interviewsService = {
   async getInterviews(): Promise<Interview[]> {

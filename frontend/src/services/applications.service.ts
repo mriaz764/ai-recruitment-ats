@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api";
-import { Application, UpdateStagePayload } from "@/types/api";
+import { Application, UpdateStagePayload } from "@/types";
 
 export const applicationsService = {
   async getApplications(): Promise<Application[]> {

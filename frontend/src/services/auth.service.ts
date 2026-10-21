@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api";
-import { User, AuthToken, LoginRequest, RegisterRequest } from "@/types/api";
+import { User, AuthToken, LoginRequest, RegisterRequest } from "@/types";
 
 export const authService = {
   async login(credentials: LoginRequest): Promise<AuthToken> {
