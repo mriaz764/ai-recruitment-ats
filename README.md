@@ -104,25 +104,48 @@ Current backend structure:
 ```text
 ai-recruitment-ats/
 ├── README.md
-├── .gitignore
-├── docker-compose.yml
 ├── alembic.ini
+├── docker-compose.yml
 ├── doc/
+│   ├── ERROR_HANDLING_LEARNING_NOTES.md
+│   ├── LEARNING_MILESTONE_7.md
 │   ├── MILESTONE_01_LEARNING_NOTES.md
-│   └── MILESTONE_02_LEARNING_NOTES.md
+│   ├── MILESTONE_02_LEARNING_NOTES.md
+│   ├── MILESTONE_03_LEARNING_NOTES.md
+│   ├── MILESTONE_04_LEARNING_NOTES.md
+│   ├── MILESTONE_05_LEARNING_NOTES.md
+│   ├── milestone-6-cv-extraction.md
+│   ├── milestone_8_learning_documentation.md
+│   ├── milestone_9_learning_and_interview_prep
+│   └── milestone_10_learning_and_interview_prep.md
 └── backend/
     ├── pyproject.toml
+    ├── requirements.txt
     ├── alembic/
+    │   ├── README
     │   ├── env.py
     │   ├── script.py.mako
     │   └── versions/
     │       ├── b5ad1ab80cd0_baseline_jobs_table.py
-    │       └── 9c82c7273610_remove_redundant_jobs_id_index.py
+    │       ├── 9c82c7273610_remove_redundant_jobs_id_index.py
+    │       ├── 4eaa16f7c6c1_add_organizations_and_users.py
+    │       ├── f2f538d914d3_add_candidates_table.py
+    │       ├── ad2b6452d9b7_add_candidate_resumes_table.py
+    │       ├── a02c2980c497_add_raw_text_to_candidate_resumes.py
+    │       ├── dbf10f71fa51_add_job_match_criteria_table.py
+    │       ├── d82620c64a1c_add_applications_table.py
+    │       ├── 684621235ca1_add_applications_table_with_notes_and_.py
+    │       ├── 30e44f9259ce_create_interviews_and_interview_.py
+    │       ├── e540d0f11b5a_add_name_to_user_and_create_interviews_.py
+    │       └── 9b335856dabc_rename_user_name_to_full_name.py
     ├── app/
     │   ├── main.py
-    │   ├── __init__.py
     │   ├── core/
-    │   │   └── config.py
+    │   │   ├── calendar.py
+    │   │   ├── config.py
+    │   │   ├── email.py
+    │   │   ├── exception_handlers.py
+    │   │   └── exceptions.py
     │   ├── db/
     │   │   ├── dependencies.py
     │   │   └── session.py
@@ -130,16 +153,115 @@ ai-recruitment-ats/
     │   │   └── routes/
     │   │       └── health.py
     │   └── modules/
-    │       └── jobs/
-    │           ├── controller.py
-    │           ├── models.py
-    │           ├── repository.py
-    │           ├── router.py
-    │           ├── schemas.py
-    │           └── service.py
+    │       ├── applications/
+    │       │   ├── controller.py
+    │       │   ├── models.py
+    │       │   ├── repository.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   └── service.py
+    │       ├── auth/
+    │       │   ├── controller.py
+    │       │   ├── dependencies.py
+    │       │   ├── repository.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   ├── security.py
+    │       │   └── service.py
+    │       ├── candidates/
+    │       │   ├── controller.py
+    │       │   ├── extractor.py
+    │       │   ├── models.py
+    │       │   ├── repository.py
+    │       │   ├── resume_models.py
+    │       │   ├── resume_service.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   ├── service.py
+    │       │   └── storage.py
+    │       ├── interviews/
+    │       │   ├── controller.py
+    │       │   ├── models.py
+    │       │   ├── repository.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   └── service.py
+    │       ├── jobs/
+    │       │   ├── controller.py
+    │       │   ├── models.py
+    │       │   ├── repository.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   └── service.py
+    │       ├── matching/
+    │       │   ├── controller.py
+    │       │   ├── models.py
+    │       │   ├── repository.py
+    │       │   ├── router.py
+    │       │   ├── schemas.py
+    │       │   └── service.py
+    │       └── organizations/
+    │           └── models.py
+    ├── private_uploads/
+    │   └── resumes/
     └── tests/
+        ├── conftest.py
+        ├── test_applications.py
+        ├── test_auth.py
+        ├── test_candidate_resumes.py
+        ├── test_candidate_search.py
+        ├── test_candidates.py
+        ├── test_cv_extractor.py
+        ├── test_database_error_handling.py
+        ├── test_exception_handlers.py
+        ├── test_interviews.py
+        ├── test_job_matching.py
         ├── test_jobs.py
-        └── test_main.py
+        ├── test_main.py
+        └── test_organization_isolation.py
+```
+
+### Current frontend structure:
+
+```text
+frontend/
+├── middleware.ts                      # Edge JWT route guard & tenant redirect
+└── src/
+    ├── app/                           # Next.js 15 App Router pages & layouts
+    ├── components/                    # UI primitives, modals, tables, and views
+    │
+    ├── services/                      # 💡 FEATURE API SERVICE LAYER (Where APIs live)
+    │   ├── auth.service.ts            # login(), register(), getCurrentUser()
+    │   ├── jobs.service.ts            # getJobs(), createJob(), updateJobStatus()
+    │   ├── candidates.service.ts      # getCandidates(), searchCandidates(), uploadCV()
+    │   ├── applications.service.ts    # getApplications(), updateStage(), addNote()
+    │   └── interviews.service.ts      # scheduleInterview(), downloadIcs()
+    │
+    ├── hooks/                         # Custom Data Fetching / Mutation Hooks
+    │   ├── useJobs.ts                 # Encapsulates job loading & mutation state
+    │   ├── useCandidates.ts           # Encapsulates candidate search state
+    │   └── useKanban.ts               # Encapsulates application stage updates
+    │
+    ├── context/                       # React Context API
+    │   └── AuthContext.tsx            # Global Auth session & active tenant state
+    │
+    ├── store/                         # Zustand Stores
+    │   └── useKanbanStore.ts          # Drag-and-drop card position state
+    │
+    ├── lib/                           # Low-Level Core Utilities
+    │   ├── api.ts                     # Base fetch client wrapper (Headers, Errors)
+    │   └── config/env.ts              # Validated environment variables
+    │
+    └── types/                         # Shared TypeScript Definitions
+        └── kanban.ts                  # UI-specific stage definitions
+        ├── common.ts          # Generic API errors, pagination, HTTP wrappers
+        ├── auth.ts            # User, Organization, JWT, Login/Register DTOs
+        ├── jobs.ts            # Job, CreateJobPayload, JobMatchCriteria
+        ├── candidates.ts      # Candidate, CandidateResume
+        ├── applications.ts    # Application, ApplicationStage, Pipeline DTOs
+        ├── interviews.ts      # Interview, ScheduleInterviewPayload
+        └── index.ts           # Barrel export (for clean imports)
+
 ```
 
 Some `__init__.py` files are omitted from this overview for readability. Add future feature modules when implementation begins rather than creating empty directories just to match a target structure.
