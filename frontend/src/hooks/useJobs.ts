@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { jobService } from "@/services";
 import type { Job } from "@/types";
 
-export function useJobs(params?: { limit?: number; skip?: number }) {
+export function useJobs(params?: { size?: number; skip?: number }) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -22,7 +22,7 @@ export function useJobs(params?: { limit?: number; skip?: number }) {
     } finally {
       setIsLoading(false);
     }
-  }, [params?.limit, params?.skip]);
+  }, [params?.size, params?.skip]);
 
   useEffect(() => {
     fetchJobs();

@@ -22,7 +22,7 @@ function LoginFormContent() {
     setError(null);
 
     try {
-      await login({ username: email, password });
+      await login({ email: email, password: password });
       router.push(redirectPath);
     } catch (err) {
       setError(

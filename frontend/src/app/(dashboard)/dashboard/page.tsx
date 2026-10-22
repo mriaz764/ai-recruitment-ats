@@ -17,9 +17,9 @@ import { ROUTES } from "@/lib/routes";
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { jobs, isLoading: isLoadingJobs } = useJobs({ limit: 5 });
+  const { jobs, isLoading: isLoadingJobs } = useJobs({ size: 5 });
   const { candidates, isLoading: isLoadingCandidates } = useCandidates({
-    limit: 5,
+    size: 5,
   });
 
   const loading = isLoadingJobs || isLoadingCandidates;

@@ -1,19 +1,17 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import Cookies from "js-cookie";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { User, LoginRequest, RegisterRequest } from "@/types";
-
+import { ROUTES } from "@/lib/routes";
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginRequest) => Promise<void>;
+  login: (credentials: LoginRequest, redirectTo?: string) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,27 +20,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
 
-  // Restore authenticated session on initial mount
+  // Restore authenticated session on initial mount via HttpOnly cookie
   useEffect(() => {
     const restoreSession = async () => {
-      const storedToken = Cookies.get("access_token");
-      if (!storedToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      setToken(storedToken);
       try {
+        // Browser automatically attaches HttpOnly cookie to this fetch
         const currentUser = await authService.getCurrentUser();
         setUser(currentUser);
       } catch {
-        // Clear invalid token if session restoration fails
-        Cookies.remove("access_token");
-        setToken(null);
+        // If cookie is missing or invalid, API returns 401
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -52,23 +41,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     restoreSession();
   }, []);
 
-  const login = async (credentials: LoginRequest) => {
+  const login = async (
+    credentials: LoginRequest,
+    redirectTo = ROUTES.DASHBOARD.HOME,
+  ) => {
     setIsLoading(true);
     try {
-      const tokenData = await authService.login(credentials);
-
-      // Store JWT in cookies (7 days expiry, accessible by Next.js Edge Middleware)
-      Cookies.set("access_token", tokenData.access_token, {
-        expires: 7,
-        sameSite: "lax",
-      });
-      setToken(tokenData.access_token);
-
-      // Fetch user profile & tenant ID
-      const currentUser = await authService.getCurrentUser();
+      // 1. API endpoint sets HttpOnly access_token & csrf_token cookies
+      const currentUser = await authService.login(credentials);
+      // 2. Update client user state
       setUser(currentUser);
-
-      router.push("/dashboard");
+      // 3. Refresh App Router cache so middleware & server components see new cookies
+      router.refresh();
+      router.push(redirectTo);
+    } catch (error) {
+      setUser(null);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -77,26 +65,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const register = async (data: RegisterRequest) => {
     setIsLoading(true);
     try {
-      await authService.register(data);
-      // Auto-login following successful registration
-      await login({ username: data.email, password: data.password });
-    } finally {
+      const currentUser = await authService.register(data);
+      // 2. Update client user state
+      setUser(currentUser);
+      // 3. Refresh App Router cache so middleware & server components see new cookies
+      router.refresh();
+      router.push(ROUTES.DASHBOARD.HOME);
+    } catch (error) {
       setIsLoading(false);
+      throw error;
     }
   };
 
-  const logout = () => {
-    Cookies.remove("access_token");
-    setToken(null);
-    setUser(null);
-    router.push("/login");
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Instruct server to expire/clear HttpOnly cookies via HTTP headers
+      await authService.logout();
+    } catch {
+      // Clear state even if network call fails
+    } finally {
+      setUser(null);
+      router.refresh();
+      router.push("/login");
+      setIsLoading(false);
+    }
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        token,
         isAuthenticated: !!user,
         isLoading,
         login,

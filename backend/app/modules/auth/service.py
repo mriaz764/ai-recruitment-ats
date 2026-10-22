@@ -1,6 +1,6 @@
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from fastapi import Response
 from app.core.config import AUTH_SECRET_KEY
 from app.core.exceptions import (
     ConflictError,
@@ -8,11 +8,12 @@ from app.core.exceptions import (
     UnauthorizedError,
 )
 from app.modules.auth import repository
-from app.modules.auth.schemas import AuthResponse, LoginRequest, RegisterRequest
+from app.modules.auth.schemas import AuthResponse, LoginRequest, RegisterRequest, UserResponse
 from app.modules.auth.security import (
     create_access_token,
     hash_password,
     verify_password,
+    set_auth_cookies
 )
 from app.modules.organizations.models import Membership, Organization, User
 
@@ -25,6 +26,7 @@ def _ensure_auth_configured() -> None:
 def register(
     db: Session,
     schema: RegisterRequest,
+    response: Response
 ) -> AuthResponse:
     _ensure_auth_configured()
     normalized_email = schema.email.strip().lower()
@@ -56,8 +58,10 @@ def register(
         access_token = create_access_token(user.id, organization.id)
         db.commit()
 
-        return AuthResponse(
-            access_token=access_token,
+    # 2. Attach cookies using helper
+        set_auth_cookies(response, access_token=access_token)
+
+        return UserResponse(
             user_id=user.id,
             email=user.email,
             full_name=user.full_name,
@@ -65,6 +69,7 @@ def register(
             organization_name=organization.name,
             role=membership.role,
         )
+        
     except IntegrityError as exc:
         db.rollback()
         raise ConflictError(
@@ -79,7 +84,8 @@ def register(
 def login(
     db: Session,
     schema: LoginRequest,
-) -> AuthResponse:
+    response: Response
+) -> UserResponse:
     _ensure_auth_configured()
     normalized_email = schema.email.strip().lower()
     user = repository.get_user_by_email(db, normalized_email)
@@ -106,8 +112,13 @@ def login(
 
     membership, organization = membership_data
 
-    return AuthResponse(
-        access_token=create_access_token(user.id, organization.id),
+    # 1. Generate Tokens
+    access_token = create_access_token(user.id, organization.id)
+   
+   # 2. Attach cookies using helper
+    set_auth_cookies(response, access_token=access_token)
+
+    return UserResponse(
         user_id=user.id,
         email=user.email,
         full_name=user.full_name,
@@ -115,3 +126,39 @@ def login(
         organization_name=organization.name,
         role=membership.role,
     )
+
+
+def get_current_user(db: Session, user_id: int) -> UserResponse:
+    user = repository.get_current_user(db, user_id)
+    if user is None:
+        raise UnauthorizedError(
+            "User not found.",
+            code="USER_NOT_FOUND",
+        )
+
+    membership_data = repository.get_membership_and_organization(
+        db,
+        user.id,
+    )
+
+    if membership_data is None:
+        raise ForbiddenError(
+            "This account has no organization membership.",
+            code="NO_ORGANIZATION_MEMBERSHIP",
+        )
+
+    membership, organization = membership_data
+
+    return UserResponse(
+            user_id=user.id,
+            email=user.email,
+            full_name=user.full_name,
+            organization_id=organization.id,
+            organization_name=organization.name,
+            role=membership.role,
+        )
+
+def logout(response: Response) -> dict[str, str]:
+    # Clear cookies using helper
+    set_auth_cookies(response, access_token=None)
+    return {"message": "Successfully logged out."}

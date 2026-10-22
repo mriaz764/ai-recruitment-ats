@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi import APIRouter, Depends, File, UploadFile, status, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -19,6 +19,7 @@ from app.modules.candidates.schemas import (
     CandidateResumeRead,
     CandidateUpdate,
 )
+from app.core.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/candidates", tags=["Candidates"])
 
@@ -40,12 +41,17 @@ def create_candidate(
     )
 
 
-@router.get("", response_model=list[CandidateRead])
+@router.get("", response_model=PaginatedResponse[CandidateRead])
 def list_candidates(
     context: Annotated[AuthContext, Depends(get_current_context)],
     db: Annotated[Session, Depends(get_db)],
-) -> list[Candidate]:
-    return controller.list_candidates(db, context.organization_id)
+   pagination: Annotated[PaginationParams, Depends()],
+) -> dict:
+    return controller.list_candidates(
+        db,
+        context.organization_id,
+        pagination
+    )
 
 
 # MUST BE BEFORE /{candidate_id}

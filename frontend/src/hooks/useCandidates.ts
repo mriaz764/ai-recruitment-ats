@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { candidateService } from "@/services";
 import type { Candidate } from "@/types";
 
-export function useCandidates(params?: { limit?: number; skip?: number }) {
+export function useCandidates(params?: { size?: number; skip?: number }) {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -22,7 +22,7 @@ export function useCandidates(params?: { limit?: number; skip?: number }) {
     } finally {
       setIsLoading(false);
     }
-  }, [params?.limit, params?.skip]);
+  }, [params?.size, params?.skip]);
 
   useEffect(() => {
     fetchCandidates();

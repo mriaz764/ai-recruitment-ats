@@ -17,6 +17,9 @@ class AuthResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
     user_id: int
+
+class UserResponse(BaseModel):
+    user_id: int
     email: EmailStr
     full_name: str
     organization_id: int

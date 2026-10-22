@@ -1,23 +1,30 @@
 import { env } from "@/lib/config/env";
 
 export interface RequestOptions extends Omit<RequestInit, "body"> {
-  body?: any;
+  body?: unknown;
   params?: Record<string, string | number | boolean | undefined | null>;
 }
 
-class ApiClient {
+// Utility to read non-HttpOnly cookie in client runtime
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift() ?? null;
+  return null;
+}
+
+export class ApiClient {
   private baseUrl: string;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
-  private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { params, body, headers: customHeaders, ...customConfig } = options;
+  async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
+    const { params, body, headers: customHeaders, method = "GET", ...customConfig } = options;
 
     let url = `${this.baseUrl}${endpoint}`;
-
-    // Parse and serialize query parameters if present
     if (params) {
       const searchParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
@@ -31,56 +38,67 @@ class ApiClient {
       }
     }
 
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-      ...customHeaders,
-    };
+    const headers = new Headers(customHeaders);
 
-    const config: RequestInit = {
-      ...customConfig,
-      headers,
-    };
-
-    if (body) {
-      if (body instanceof URLSearchParams || body instanceof FormData) {
-        config.body = body;
-        if (body instanceof FormData) {
-          delete (headers as Record<string, string>)["Content-Type"];
-        }
-      } else {
-        config.body = JSON.stringify(body);
+    // Automatically attach CSRF token header for mutation requests
+    if (typeof window !== "undefined" && ["POST", "PUT", "PATCH", "DELETE"].includes(method.toUpperCase())) {
+      const csrfToken = getCookie("csrf_token");
+      if (csrfToken && !headers.has("X-CSRF-Token")) {
+        headers.set("X-CSRF-Token", csrfToken);
       }
     }
 
-    const response = await fetch(url, config);
+    let requestBody: BodyInit | undefined;
+    if (body !== undefined && body !== null) {
+      if (body instanceof FormData || body instanceof URLSearchParams) {
+        requestBody = body;
+      } else {
+        if (!headers.has("Content-Type")) {
+          headers.set("Content-Type", "application/json");
+        }
+        requestBody = JSON.stringify(body);
+      }
+    }
+
+    const response = await fetch(url, {
+      ...customConfig,
+      method,
+      headers,
+      body: requestBody,
+      credentials: "include", // Passes HttpOnly auth cookies automatically
+    });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.detail || errorData.message || `HTTP error! status: ${response.status}`
-      );
+      let message = `HTTP error! status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        message = errorData.detail || errorData.message || message;
+      } catch {
+        // Fallback
+      }
+      throw new Error(message);
     }
 
     if (response.status === 204) {
-      return {} as T;
+      return undefined as T;
     }
 
-    return response.json();
+    return response.json() as Promise<T>;
   }
 
   public get<T>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: "GET" });
   }
 
-  public post<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  public post<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: "POST", body });
   }
 
-  public put<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  public put<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: "PUT", body });
   }
 
-  public patch<T>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  public patch<T>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: "PATCH", body });
   }
 
@@ -89,4 +107,6 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1");
+export const apiClient = new ApiClient(
+  env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+);

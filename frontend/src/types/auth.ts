@@ -13,13 +13,13 @@ export interface Organization {
   slug: string;
 }
 
-export interface AuthToken {
-  access_token: string;
-  token_type: string;
+export interface AuthResponse {
+    access_token: string
+    token_type: string
 }
 
 export interface LoginRequest {
-  username: string; // Form-data email for FastAPI OAuth2 password flow
+  email: string; // Form-data email for FastAPI OAuth2 password flow
   password: string;
 }
 

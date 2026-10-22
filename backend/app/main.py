@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -15,9 +16,9 @@ from app.core.exceptions import AppError
 from app.modules.applications.router import router as applications_router
 from app.modules.auth.router import router as auth_router
 from app.modules.candidates.router import router as candidates_router
+from app.modules.interviews.router import router as interviews_router
 from app.modules.jobs.router import router as jobs_router
 from app.modules.matching.router import router as matching_router
-from app.modules.interviews.router import router as interviews_router
 
 app = FastAPI(
     title="AI Recruitment ATS",
@@ -25,21 +26,29 @@ app = FastAPI(
     version="0.1.0",
 )
 
-app.add_exception_handler(AppError, app_error_handler)
-app.add_exception_handler(
-    RequestValidationError,
-    validation_error_handler,
-)
-app.add_exception_handler(
-    StarletteHTTPException,
-    http_error_handler,
-)
-app.add_exception_handler(Exception, unexpected_error_handler)
-app.add_exception_handler(
-    SQLAlchemyError,
-    database_error_handler,
+# Explicit origins are required when allow_credentials=True (wildcards are forbidden by browser CORS spec)
+origins = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://192.168.1.8:3000",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Exception Handlers
+app.add_exception_handler(AppError, app_error_handler)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.add_exception_handler(StarletteHTTPException, http_error_handler)
+app.add_exception_handler(Exception, unexpected_error_handler)
+app.add_exception_handler(SQLAlchemyError, database_error_handler)
+
+# Routers
 app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(jobs_router)

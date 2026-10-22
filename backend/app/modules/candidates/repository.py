@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.modules.candidates.models import Candidate
 from app.modules.candidates.resume_models import CandidateResume
-
+from app.core.schemas import PaginationParams
 
 def create(db: Session, candidate: Candidate) -> Candidate:
     db.add(candidate)
@@ -12,13 +12,30 @@ def create(db: Session, candidate: Candidate) -> Candidate:
     return candidate
 
 
-def list_all(db: Session, organization_id: int) -> list[Candidate]:
+def list_all(
+    db: Session,
+    organization_id: int,
+    pagination_params: PaginationParams,
+) -> tuple[list[Candidate], int]:
     statement = (
         select(Candidate)
         .where(Candidate.organization_id == organization_id)
         .order_by(Candidate.created_at.desc())
     )
-    return list(db.scalars(statement).all())
+
+    offset = (pagination_params.page - 1) * pagination_params.size
+    items = list(db.scalars(statement.limit(pagination_params.size).offset(offset)).all())
+
+    total = (
+        db.scalar(
+            select(func.count(Candidate.id)).where(
+                Candidate.organization_id == organization_id
+            )
+        )
+        or 0
+    )
+
+    return items, total
 
 
 def get_by_id(

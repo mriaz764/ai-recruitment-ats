@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api";
 import { Candidate, PaginatedResponse } from "@/types";
 
 export const candidateService = {
-  async getCandidates(params?: { limit?: number; skip?: number }): Promise<PaginatedResponse<Candidate>> {
+  async getCandidates(params?: { size?: number; skip?: number }): Promise<PaginatedResponse<Candidate>> {
     return apiClient.get<PaginatedResponse<Candidate>>("/candidates", { params });
   },
 

@@ -9,6 +9,7 @@ from app.modules.jobs.schemas import (
     JobStatusUpdate,
     JobUpdate,
 )
+from app.core.schemas import PaginationParams
 
 
 def create_job(
@@ -32,8 +33,19 @@ def create_job(
     return job
 
 
-def list_jobs(db: Session, organization_id: int) -> list[Job]:
-    return repository.list_all(db, organization_id)
+def list_jobs(
+    db: Session,
+    organization_id: int,
+    pagination_params: PaginationParams,
+) -> dict:
+    items, total = repository.list_all(db, organization_id, pagination_params)
+    return {
+        "items": items,
+        "total": total,
+        "page": pagination_params.page,
+        "size": pagination_params.size,
+    }
+
 
 
 def get_job(db: Session, job_id: int, organization_id: int) -> Job:

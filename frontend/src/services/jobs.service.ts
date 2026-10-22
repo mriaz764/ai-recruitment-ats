@@ -2,7 +2,7 @@ import { apiClient } from "@/lib/api";
 import { Job, CreateJobPayload, PaginatedResponse } from "@/types";
 
 export const jobService = {
-  async getJobs(params?: { limit?: number; skip?: number }): Promise<PaginatedResponse<Job>> {
+  async getJobs(params?: { size?: number; skip?: number }): Promise<PaginatedResponse<Job>> {
     return apiClient.get<PaginatedResponse<Job>>("/jobs", { params });
   },
 

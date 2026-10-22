@@ -1,13 +1,9 @@
 import { apiClient } from "@/lib/api";
-import { User, AuthToken, LoginRequest, RegisterRequest } from "@/types";
+import { User, LoginRequest, RegisterRequest } from "@/types";
 
 export const authService = {
-  async login(credentials: LoginRequest): Promise<AuthToken> {
-    const formData = new URLSearchParams();
-    formData.append("username", credentials.username);
-    formData.append("password", credentials.password);
-
-    return apiClient.post<AuthToken>("/auth/token", formData);
+  async login(credentials: LoginRequest): Promise<User> {
+    return apiClient.post<User>("/auth/login", credentials);
   },
 
   async register(data: RegisterRequest): Promise<User> {
@@ -16,5 +12,8 @@ export const authService = {
 
   async getCurrentUser(): Promise<User> {
     return apiClient.get<User>("/auth/me");
+  },
+  async logout(): Promise<void> {
+    return apiClient.post("/auth/logout");
   },
 };
