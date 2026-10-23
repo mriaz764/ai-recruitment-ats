@@ -1,6 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.modules.matching.models import JobMatchCriteria
+from app.modules.jobs.models import JobMatchCriteria
+from app.modules.matching.models import CandidateMatchScore
 
 
 def get_criteria_by_job(

@@ -26,7 +26,13 @@ def create_interview(
     context: Annotated[AuthContext, Depends(get_current_context)],
     db: Annotated[Session, Depends(get_db)],
 ) -> InterviewRead:
-    return controller.create_interview(db, context.organization_id, data, background_tasks,creator_email=context.email,)
+    return controller.create_interview(
+        db,
+        context.organization_id,
+        data,
+        background_tasks,
+        creator_email=context.email,
+    )
 
 
 @router.get(

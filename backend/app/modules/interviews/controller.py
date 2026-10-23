@@ -13,7 +13,9 @@ def create_interview(
     background_tasks: BackgroundTasks,
     creator_email: str,
 ) -> Interview:
-    return service.create_interview(db, organization_id, schema, background_tasks, creator_email)
+    return service.create_interview(
+        db, organization_id, schema, background_tasks, creator_email
+    )
 
 
 def get_interview(

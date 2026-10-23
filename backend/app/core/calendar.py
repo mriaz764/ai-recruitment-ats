@@ -17,7 +17,7 @@ def generate_ics(
     start_str = start_at.astimezone(timezone.utc).strftime(fmt)
     end_str = end_at.astimezone(timezone.utc).strftime(fmt)
     now_str = datetime.now(timezone.utc).strftime(fmt)
-    
+
     uid = f"{uuid.uuid4()}@your-ats.com"
 
     attendees_str = "\n".join(

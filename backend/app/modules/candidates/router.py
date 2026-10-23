@@ -45,13 +45,9 @@ def create_candidate(
 def list_candidates(
     context: Annotated[AuthContext, Depends(get_current_context)],
     db: Annotated[Session, Depends(get_db)],
-   pagination: Annotated[PaginationParams, Depends()],
+    pagination: Annotated[PaginationParams, Depends()],
 ) -> dict:
-    return controller.list_candidates(
-        db,
-        context.organization_id,
-        pagination
-    )
+    return controller.list_candidates(db, context.organization_id, pagination)
 
 
 # MUST BE BEFORE /{candidate_id}

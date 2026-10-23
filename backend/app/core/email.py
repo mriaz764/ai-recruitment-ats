@@ -18,5 +18,7 @@ def send_email_with_attachment_async(
     logger.info(f"To: {', '.join(to_emails)}")
     logger.info(f"Subject: {subject}")
     logger.info(f"Body: {body}")
-    logger.info(f"Attachment Included: {attachment_name} ({len(attachment_content)} bytes)")
+    logger.info(
+        f"Attachment Included: {attachment_name} ({len(attachment_content)} bytes)"
+    )
     logger.info("===============================================")

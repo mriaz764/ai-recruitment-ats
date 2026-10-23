@@ -3,7 +3,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # 1. Load key-value pairs from .env into os.environ
-#load_dotenv()
+# load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 
@@ -23,7 +23,9 @@ IS_PRODUCTION = ENVIRONMENT == "production"
 AUTH_SECRET_KEY = os.getenv("AUTH_SECRET_KEY", "")
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
-CSRF_TOKEN_EXPIRE_MINUTES = int(os.getenv("CSRF_TOKEN_EXPIRE_MINUTES", "1440"))  # Default: 24 hours
+CSRF_TOKEN_EXPIRE_MINUTES = int(
+    os.getenv("CSRF_TOKEN_EXPIRE_MINUTES", "1440")
+)  # Default: 24 hours
 # CV files are stored privately, outside the public web directory.
 BASE_DIR = Path(__file__).resolve().parents[2]
 RESUME_STORAGE_DIR = Path(
@@ -31,5 +33,3 @@ RESUME_STORAGE_DIR = Path(
 ).resolve()
 
 MAX_RESUME_SIZE_BYTES = int(os.getenv("MAX_RESUME_SIZE_BYTES", str(5 * 1024 * 1024)))
-
-

@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.db.dependencies import get_db
 from app.modules.auth import controller
-from app.modules.auth.dependencies import AuthContext, get_current_context  # Fixed import path
+from app.modules.auth.dependencies import (
+    AuthContext,
+    get_current_context,
+)  # Fixed import path
 from app.modules.auth.schemas import LoginRequest, RegisterRequest, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
