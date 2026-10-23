@@ -13,7 +13,8 @@ from app.modules.auth.security import (
     create_access_token,
     hash_password,
     verify_password,
-    set_auth_cookies
+    set_auth_cookies,
+    clear_auth_cookies
 )
 from app.modules.organizations.models import Membership, Organization, User
 
@@ -160,5 +161,5 @@ def get_current_user(db: Session, user_id: int) -> UserResponse:
 
 def logout(response: Response) -> dict[str, str]:
     # Clear cookies using helper
-    set_auth_cookies(response, access_token=None)
+    clear_auth_cookies(response)
     return {"message": "Successfully logged out."}

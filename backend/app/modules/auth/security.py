@@ -78,18 +78,21 @@ def set_auth_cookies(
 
 
 def clear_auth_cookies(response: Response) -> None:
-    """Clears both access_token and csrf_token cookies on logout."""
+    """
+    Clears the access_token and csrf_token cookies from the response.
+    Must match the attributes used in set_auth_cookies so browsers accept deletion.
+    """
     response.delete_cookie(
         key="access_token",
         path="/",
+        samesite="lax",
         httponly=True,
         secure=IS_PRODUCTION,
-        samesite="lax",
     )
     response.delete_cookie(
         key="csrf_token",
         path="/",
+        samesite="lax",
         httponly=False,
         secure=IS_PRODUCTION,
-        samesite="lax",
     )

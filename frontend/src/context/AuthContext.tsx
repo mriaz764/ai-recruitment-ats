@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "@/services/auth.service";
 import { User, LoginRequest, RegisterRequest } from "@/types";
@@ -9,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (credentials: LoginRequest, redirectTo?: string) => Promise<void>;
+  login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -22,29 +28,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const router = useRouter();
-
+  // Ref updates synchronously to block Strict Mode duplicate calls
+  const initialized = useRef(false);
   // Restore authenticated session on initial mount via HttpOnly cookie
   useEffect(() => {
+    // 1. Synchronously prevent double execution in React Strict Mode
+    if (initialized.current) return;
+    initialized.current = true;
+    // If user state is already populated, do not refetch
+    if (user) return;
     const restoreSession = async () => {
-      try {
-        // Browser automatically attaches HttpOnly cookie to this fetch
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
-      } catch {
-        // If cookie is missing or invalid, API returns 401
-        setUser(null);
-      } finally {
-        setIsLoading(false);
-      }
+      getCurrentUser();
     };
 
     restoreSession();
-  }, []);
+  }, []); // Empty dependency array guarantees this runs ONLY once on app mount
+  const getCurrentUser = async () => {
+    try {
+      const currentUser = await authService.getCurrentUser();
+      setUser(currentUser);
+    } catch (error) {
+      setUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const login = async (
-    credentials: LoginRequest,
-    redirectTo = ROUTES.DASHBOARD.HOME,
-  ) => {
+  const login = async (credentials: LoginRequest) => {
     setIsLoading(true);
     try {
       // 1. API endpoint sets HttpOnly access_token & csrf_token cookies
@@ -53,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setUser(currentUser);
       // 3. Refresh App Router cache so middleware & server components see new cookies
       router.refresh();
-      router.push(redirectTo);
+      router.push(ROUTES.DASHBOARD.HOME);
     } catch (error) {
       setUser(null);
       throw error;
@@ -82,13 +92,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       // 1. Instruct server to expire/clear HttpOnly cookies via HTTP headers
       await authService.logout();
-    } catch {
+    } catch (error) {
       // Clear state even if network call fails
+      console.error("Logout failed on server:", error);
     } finally {
+      // 2. Reset local state
+      initialized.current = false;
       setUser(null);
-      router.refresh();
-      router.push("/login");
       setIsLoading(false);
+      window.location.href = ROUTES.AUTH.LOGIN;
+      //router.refresh();
+      //router.replace(ROUTES.AUTH.LOGIN);
     }
   };
 
