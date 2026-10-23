@@ -2,16 +2,13 @@ from dataclasses import dataclass
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi import Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
 from app.core.config import AUTH_SECRET_KEY
 from app.db.dependencies import get_db
 from app.modules.auth import repository
 from app.modules.organizations.models import User
-
-bearer_scheme = HTTPBearer(auto_error=False)
 
 
 @dataclass(frozen=True)
@@ -24,27 +21,36 @@ class AuthContext:
 
 
 def get_current_context(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None,
-        Depends(bearer_scheme),
-    ],
+    request: Request,
     db: Annotated[Session, Depends(get_db)],
 ) -> AuthContext:
     unauthorized = HTTPException(
         status_code=401,
         detail={
             "code": "AUTHENTICATION_REQUIRED",
-            "message": "A valid bearer access token is required.",
+            "message": "Authentication required. Missing or invalid access token.",
         },
-        headers={"WWW-Authenticate": "Bearer"},
     )
 
-    if not credentials or not AUTH_SECRET_KEY:
+    if not AUTH_SECRET_KEY:
         raise unauthorized
 
+    # 1. Primary: Read access token from HttpOnly cookie
+    token = request.cookies.get("access_token")
+
+    # 2. Fallback: Check Authorization Bearer header (for Swagger UI / Postman testing)
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+    if not token:
+        raise unauthorized
+
+    # 3. Decode and validate JWT payload
     try:
         payload = jwt.decode(
-            credentials.credentials,
+            token,
             AUTH_SECRET_KEY,
             algorithms=["HS256"],
             options={"require": ["exp", "sub", "org_id"]},
@@ -54,10 +60,12 @@ def get_current_context(
     except (jwt.InvalidTokenError, KeyError, TypeError, ValueError):
         raise unauthorized from None
 
+    # 4. Fetch user and verify active status
     user = db.get(User, user_id)
     if user is None or not user.is_active:
         raise unauthorized
 
+    # 5. Fetch organization membership
     membership_data = repository.get_membership_and_organization(
         db,
         user_id,
@@ -68,6 +76,7 @@ def get_current_context(
 
     membership, organization = membership_data
 
+    # 6. Verify ATS access permission
     if membership.role not in {"owner", "admin", "recruiter"}:
         raise HTTPException(
             status_code=403,

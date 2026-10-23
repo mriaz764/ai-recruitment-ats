@@ -3,7 +3,7 @@ import re
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-
+from app.core.schemas import PaginationParams
 from app.core.exceptions import ConflictError, NotFoundError
 from app.modules.candidates import repository
 from app.modules.candidates.models import Candidate
@@ -101,8 +101,15 @@ def create_candidate(
 def list_candidates(
     db: Session,
     organization_id: int,
-) -> list[Candidate]:
-    return repository.list_all(db, organization_id)
+    pagination_params: PaginationParams,
+) -> dict:
+     items, total = repository.list_all(db, organization_id, pagination_params)
+     return {
+             "items": items,
+             "total": total,
+             "page": pagination_params.page,
+             "size": pagination_params.size,
+         }
 
 
 def get_candidate(

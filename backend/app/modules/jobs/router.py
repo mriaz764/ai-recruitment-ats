@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
 
 from app.db.dependencies import get_db
@@ -17,6 +17,7 @@ from app.modules.jobs.schemas import (
     JobStatusUpdate,
     JobUpdate,
 )
+from app.core.schemas import PaginatedResponse, PaginationParams
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -41,12 +42,18 @@ def create_job(
     return controller.create_job(job_data, db, context.organization_id)
 
 
-@router.get("", response_model=list[JobRead])
+@router.get("", response_model=PaginatedResponse[JobRead])
 def list_jobs(
     context: Annotated[AuthContext, Depends(get_current_context)],
     db: Annotated[Session, Depends(get_db)],
-) -> list[Job]:
-    return controller.list_jobs(db, context.organization_id)
+    pagination: Annotated[PaginationParams, Depends()],
+) -> dict:
+    return controller.list_jobs(
+        db,
+        organization_id=context.organization_id,
+        pagination_params=pagination
+    )
+    
 
 
 @router.get("/{job_id}", response_model=JobRead)

@@ -7,6 +7,7 @@ from app.modules.jobs.schemas import (
     JobStatusUpdate,
     JobUpdate,
 )
+from app.core.schemas import PaginationParams
 
 
 def create_job(
@@ -17,8 +18,12 @@ def create_job(
     return service.create_job(db, job_data, organization_id)
 
 
-def list_jobs(db: Session, organization_id: int) -> list[Job]:
-    return service.list_jobs(db, organization_id)
+def list_jobs(
+    db: Session,
+    organization_id: int,
+    pagination_params: PaginationParams,
+) -> dict:
+    return service.list_jobs(db, organization_id, pagination_params)
 
 
 def get_job(

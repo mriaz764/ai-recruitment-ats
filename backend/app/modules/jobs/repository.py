@@ -1,8 +1,8 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.modules.jobs.models import Job
-
+from app.core.schemas import PaginationParams
 
 def create(db: Session, job: Job) -> Job:
     db.add(job)
@@ -11,13 +11,31 @@ def create(db: Session, job: Job) -> Job:
     return job
 
 
-def list_all(db: Session, organization_id: int) -> list[Job]:
-    statement = (
+def list_all(
+    db: Session,
+    organization_id: int,
+    pagination_params: PaginationParams,
+) -> tuple[list[Job], int]:
+    # 1. Total records count
+    count_stmt = (
+        select(func.count())
+        .select_from(Job)
+        .where(Job.organization_id == organization_id)
+    )
+    total = db.scalar(count_stmt) or 0
+
+    # 2. Paginated items
+    offset = (pagination_params.page - 1) * pagination_params.size
+    stmt = (
         select(Job)
         .where(Job.organization_id == organization_id)
         .order_by(Job.created_at.desc())
+        .offset(offset)
+        .limit(pagination_params.size)
     )
-    return list(db.scalars(statement).all())
+    items = list(db.scalars(stmt).all())
+
+    return items, total
 
 
 def get_by_id(

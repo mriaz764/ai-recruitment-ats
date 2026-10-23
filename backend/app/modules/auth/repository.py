@@ -13,6 +13,11 @@ def get_user_by_email(db: Session, email: str) -> User | None:
     return db.scalar(statement)
 
 
+def get_current_user(db: Session, user_id: int) -> User | None:
+    statement = select(User).where(User.id == user_id)
+    return db.scalar(statement)
+
+
 def get_membership_and_organization(
     db: Session,
     user_id: int,
