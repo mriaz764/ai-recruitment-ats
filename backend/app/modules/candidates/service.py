@@ -103,13 +103,13 @@ def list_candidates(
     organization_id: int,
     pagination_params: PaginationParams,
 ) -> dict:
-     items, total = repository.list_all(db, organization_id, pagination_params)
-     return {
-             "items": items,
-             "total": total,
-             "page": pagination_params.page,
-             "size": pagination_params.size,
-         }
+    items, total = repository.list_all(db, organization_id, pagination_params)
+    return {
+        "items": items,
+        "total": total,
+        "page": pagination_params.page,
+        "size": pagination_params.size,
+    }
 
 
 def get_candidate(

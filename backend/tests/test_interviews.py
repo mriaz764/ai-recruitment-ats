@@ -88,7 +88,9 @@ def test_cross_tenant_application_isolation(client: TestClient, db_session: Sess
     victim_auth = setup_auth_context(client)
     victim_org_id = victim_auth["organization_id"]
 
-    candidate = Candidate(organization_id=victim_org_id, full_name="Bob", email="b@test.com")
+    candidate = Candidate(
+        organization_id=victim_org_id, full_name="Bob", email="b@test.com"
+    )
     job = Job(
         organization_id=victim_org_id,
         title="CEO",
@@ -113,12 +115,15 @@ def test_cross_tenant_application_isolation(client: TestClient, db_session: Sess
             "scheduled_at": datetime.now(timezone.utc).isoformat(),
             "end_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
             "location": "Remote",  # 🔄 Added to pass Pydantic validation
-            "interviewers": [{"user_id": attacker_auth["user_id"]}], # 🔄 Added to pass Pydantic
+            "interviewers": [
+                {"user_id": attacker_auth["user_id"]}
+            ],  # 🔄 Added to pass Pydantic
         },
     )
 
     # 4. Must return 404 Not Found (Strict Isolation)
     assert response.status_code == 404
+
 
 def test_update_interview_status(client: TestClient, db_session: Session):
     auth_data = setup_auth_context(client)
@@ -127,7 +132,13 @@ def test_update_interview_status(client: TestClient, db_session: Session):
     user_id = auth_data["user_id"]
 
     candidate = Candidate(organization_id=org_id, full_name="Dave", email="d@test.com")
-    job = Job(organization_id=org_id, title="QA", department="Eng", description="QA", location="HQ")
+    job = Job(
+        organization_id=org_id,
+        title="QA",
+        department="Eng",
+        description="QA",
+        location="HQ",
+    )
     db_session.add_all([candidate, job])
     db_session.flush()
 
@@ -144,12 +155,14 @@ def test_update_interview_status(client: TestClient, db_session: Session):
             "application_id": application.id,
             "scheduled_at": datetime.now(timezone.utc).isoformat(),
             "end_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
-            "location": "HQ", # 🔄 Added to pass Pydantic validation
-            "interviewers": [{"user_id": user_id}], # 🔄 Added to pass Pydantic
+            "location": "HQ",  # 🔄 Added to pass Pydantic validation
+            "interviewers": [{"user_id": user_id}],  # 🔄 Added to pass Pydantic
         },
     )
-    
-    assert post_response.status_code == 201 # Ensure creation worked before extracting ID
+
+    assert (
+        post_response.status_code == 201
+    )  # Ensure creation worked before extracting ID
     interview_id = post_response.json()["id"]
 
     patch_response = client.patch(
@@ -159,14 +172,13 @@ def test_update_interview_status(client: TestClient, db_session: Session):
     assert patch_response.status_code == 200
     assert patch_response.json()["status"] == "completed"
 
+
 def test_interviews_reject_request_without_token(client: TestClient):
     # Ensure no token is present
     client.headers.pop("Authorization", None)
 
     response = client.get("/interviews/")
     assert response.status_code == 401
-
-
 
 
 def test_ics_generation_with_recruiter_organizer():

@@ -5,6 +5,7 @@ from app.modules.candidates.models import Candidate
 from app.modules.candidates.resume_models import CandidateResume
 from app.core.schemas import PaginationParams
 
+
 def create(db: Session, candidate: Candidate) -> Candidate:
     db.add(candidate)
     db.flush()
@@ -24,7 +25,9 @@ def list_all(
     )
 
     offset = (pagination_params.page - 1) * pagination_params.size
-    items = list(db.scalars(statement.limit(pagination_params.size).offset(offset)).all())
+    items = list(
+        db.scalars(statement.limit(pagination_params.size).offset(offset)).all()
+    )
 
     total = (
         db.scalar(

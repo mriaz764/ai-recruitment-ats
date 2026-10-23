@@ -8,13 +8,18 @@ from app.core.exceptions import (
     UnauthorizedError,
 )
 from app.modules.auth import repository
-from app.modules.auth.schemas import AuthResponse, LoginRequest, RegisterRequest, UserResponse
+from app.modules.auth.schemas import (
+    AuthResponse,
+    LoginRequest,
+    RegisterRequest,
+    UserResponse,
+)
 from app.modules.auth.security import (
     create_access_token,
     hash_password,
     verify_password,
     set_auth_cookies,
-    clear_auth_cookies
+    clear_auth_cookies,
 )
 from app.modules.organizations.models import Membership, Organization, User
 
@@ -24,11 +29,7 @@ def _ensure_auth_configured() -> None:
         raise RuntimeError("AUTH_SECRET_KEY must be configured.")
 
 
-def register(
-    db: Session,
-    schema: RegisterRequest,
-    response: Response
-) -> AuthResponse:
+def register(db: Session, schema: RegisterRequest, response: Response) -> AuthResponse:
     _ensure_auth_configured()
     normalized_email = schema.email.strip().lower()
 
@@ -59,7 +60,7 @@ def register(
         access_token = create_access_token(user.id, organization.id)
         db.commit()
 
-    # 2. Attach cookies using helper
+        # 2. Attach cookies using helper
         set_auth_cookies(response, access_token=access_token)
 
         return UserResponse(
@@ -70,7 +71,7 @@ def register(
             organization_name=organization.name,
             role=membership.role,
         )
-        
+
     except IntegrityError as exc:
         db.rollback()
         raise ConflictError(
@@ -82,11 +83,7 @@ def register(
         raise
 
 
-def login(
-    db: Session,
-    schema: LoginRequest,
-    response: Response
-) -> UserResponse:
+def login(db: Session, schema: LoginRequest, response: Response) -> UserResponse:
     _ensure_auth_configured()
     normalized_email = schema.email.strip().lower()
     user = repository.get_user_by_email(db, normalized_email)
@@ -115,8 +112,8 @@ def login(
 
     # 1. Generate Tokens
     access_token = create_access_token(user.id, organization.id)
-   
-   # 2. Attach cookies using helper
+
+    # 2. Attach cookies using helper
     set_auth_cookies(response, access_token=access_token)
 
     return UserResponse(
@@ -151,13 +148,14 @@ def get_current_user(db: Session, user_id: int) -> UserResponse:
     membership, organization = membership_data
 
     return UserResponse(
-            user_id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            organization_id=organization.id,
-            organization_name=organization.name,
-            role=membership.role,
-        )
+        user_id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        organization_id=organization.id,
+        organization_name=organization.name,
+        role=membership.role,
+    )
+
 
 def logout(response: Response) -> dict[str, str]:
     # Clear cookies using helper

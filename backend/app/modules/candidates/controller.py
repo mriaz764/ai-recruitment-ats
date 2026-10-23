@@ -5,6 +5,7 @@ from app.modules.candidates.models import Candidate
 from app.modules.candidates.schemas import CandidateCreate, CandidateUpdate
 from app.core.schemas import PaginationParams
 
+
 def create_candidate(
     candidate_data: CandidateCreate,
     db: Session,
@@ -13,7 +14,9 @@ def create_candidate(
     return service.create_candidate(db, candidate_data, organization_id)
 
 
-def list_candidates(db: Session, organization_id: int, pagination_params: PaginationParams) -> dict:
+def list_candidates(
+    db: Session, organization_id: int, pagination_params: PaginationParams
+) -> dict:
     return service.list_candidates(db, organization_id, pagination_params)
 
 

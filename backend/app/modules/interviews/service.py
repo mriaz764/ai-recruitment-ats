@@ -72,12 +72,12 @@ def create_interview(
         db.commit()
         db.refresh(interview)
         # --- 🔄 NEW: Calendar & Email Logic ---
-    
+
         # 1. Gather Emails (Assuming relationships are loaded)
         candidate_email = interview.application.candidate.email
         job_title = interview.application.job.title
         interviewer_emails = [i.user.email for i in interview.interviewers if i.user]
-        
+
         # Add external interviewers
         for ext_interviewer in schema.interviewers:
             if ext_interviewer.external_email:
@@ -92,7 +92,7 @@ def create_interview(
             location=schema.location or "Remote",
             start_at=schema.scheduled_at,
             end_at=schema.end_at,
-            organizer_email=creator_email, # Usually the recruiter's email
+            organizer_email=creator_email,  # Usually the recruiter's email
             attendee_emails=all_attendees,
         )
 
@@ -105,7 +105,7 @@ def create_interview(
             attachment_name="invite.ics",
             attachment_content=ics_content,
         )
-        
+
         return interview
 
     except IntegrityError as exc:
