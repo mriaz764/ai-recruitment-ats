@@ -341,3 +341,42 @@ def test_update_application_status_rolls_back_when_commit_fails(
     db_session.expire_all()
     saved_application = db_session.get(JobApplication, application_id)
     assert saved_application is None
+
+
+def test_update_application_status_with_rejection_reason_and_filter(
+    client,
+    db_session,
+    organization_id,
+):
+    candidate = create_candidate(db_session, organization_id)
+    job = create_job(db_session, organization_id)
+    application = JobApplication(
+        organization_id=organization_id,
+        candidate_id=candidate.id,
+        job_id=job.id,
+    )
+    db_session.add(application)
+    db_session.flush()
+
+    # 1. Reject Application with reason
+    response = client.patch(
+        f"/applications/{application.id}/status",
+        json={
+            "status": "rejected",
+            "notes": "Failed technical round",
+            "rejection_reason": "Insufficient system design experience",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "rejected"
+    assert response.json()["rejection_reason"] == "Insufficient system design experience"
+
+    # 2. Filter list endpoint by status
+    list_rejected = client.get("/applications?status=rejected")
+    assert list_rejected.status_code == 200
+    assert len(list_rejected.json()) == 1
+
+    list_interview = client.get("/applications?status=interview")
+    assert list_interview.status_code == 200
+    assert len(list_interview.json()) == 0

@@ -156,7 +156,7 @@ def test_update_job_match_criteria(client, db_session, organization_id):
     assert data[0]["weight"] == 5
     assert data[0]["is_required"] is True
 
-    # Verify DB persistence
+    # Verify DB persistence 
     saved_criteria = (
         db_session.query(JobMatchCriteria)
         .filter(JobMatchCriteria.job_id == job.id)

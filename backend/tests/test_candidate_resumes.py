@@ -8,8 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.modules.candidates import resume_service, storage
-from app.modules.candidates.models import Candidate
-from app.modules.candidates.resume_models import CandidateResume
+from app.modules.candidates.models import Candidate, CandidateResume
 from app.modules.organizations.models import Organization
 
 PDF_CONTENT = b"%PDF-1.7\nSample CV content\n%%EOF"

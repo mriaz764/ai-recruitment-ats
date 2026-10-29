@@ -1,8 +1,7 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.modules.candidates.models import Candidate
-from app.modules.candidates.resume_models import CandidateResume
+from app.modules.candidates.models import Candidate, CandidateResume
 from app.modules.organizations.models import Organization
 
 
