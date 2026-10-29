@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError
 from app.modules.applications import repository
-from app.modules.applications.models import JobApplication
+from app.modules.applications.models import ApplicationStatus, JobApplication
 from app.modules.candidates.models import Candidate
 from app.modules.jobs.models import Job
 
@@ -48,7 +48,7 @@ def create_application(
         organization_id=organization_id,
         candidate_id=candidate_id,
         job_id=job_id,
-        status="applied",
+        status=ApplicationStatus.APPLIED,
         notes=notes,
     )
 
@@ -78,8 +78,11 @@ def list_applications(
     db: Session,
     organization_id: int,
     job_id: int | None = None,
+    status_filter: ApplicationStatus | None = None,
 ) -> list[JobApplication]:
-    return repository.list_all(db, organization_id, job_id=job_id)
+    return repository.list_all(
+        db, organization_id, job_id=job_id, status_filter=status_filter
+    )
 
 
 def get_application(
@@ -103,8 +106,9 @@ def update_application_status(
     db: Session,
     application_id: int,
     organization_id: int,
-    status: str,
+    status: ApplicationStatus,
     notes: str | None = None,
+    rejection_reason: str | None = None,
 ) -> JobApplication:
     application = repository.get_by_id(
         db=db,
@@ -115,12 +119,12 @@ def update_application_status(
     if application is None:
         raise NotFoundError("Application not found.", code="APPLICATION_NOT_FOUND")
 
-    # Delegate mutation to the repository layer
     repository.update_status_and_notes(
         db=db,
         application=application,
         status=status,
         notes=notes,
+        rejection_reason=rejection_reason,
     )
 
     try:

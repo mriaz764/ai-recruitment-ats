@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.modules.applications import service
-from app.modules.applications.models import JobApplication
+from app.modules.applications.models import ApplicationStatus, JobApplication
 
 
 def create_application(
@@ -24,11 +24,13 @@ def list_applications(
     db: Session,
     organization_id: int,
     job_id: int | None = None,
+    status_filter: ApplicationStatus | None = None,
 ) -> list[JobApplication]:
     return service.list_applications(
         db=db,
         organization_id=organization_id,
         job_id=job_id,
+        status_filter=status_filter,
     )
 
 
@@ -48,8 +50,9 @@ def update_application_status(
     db: Session,
     application_id: int,
     organization_id: int,
-    status: str,
+    status: ApplicationStatus,
     notes: str | None = None,
+    rejection_reason: str | None = None,
 ) -> JobApplication:
     return service.update_application_status(
         db=db,
@@ -57,4 +60,5 @@ def update_application_status(
         organization_id=organization_id,
         status=status,
         notes=notes,
+        rejection_reason=rejection_reason,
     )

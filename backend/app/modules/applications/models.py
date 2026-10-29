@@ -1,7 +1,9 @@
+import enum
 from datetime import datetime
 
 from sqlalchemy import (
     DateTime,
+    Enum as SQLEnum,
     ForeignKey,
     Index,
     String,
@@ -12,6 +14,15 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
+
+
+class ApplicationStatus(str, enum.Enum):
+    APPLIED = "applied"
+    SCREENING = "screening"
+    INTERVIEW = "interview"
+    OFFER = "offer"
+    HIRED = "hired"
+    REJECTED = "rejected"
 
 
 class JobApplication(Base):
@@ -47,15 +58,20 @@ class JobApplication(Base):
         nullable=False,
     )
 
-    status: Mapped[str] = mapped_column(
-        String(30),
+    status: Mapped[ApplicationStatus] = mapped_column(
+        SQLEnum(ApplicationStatus, native_enum=False),
         nullable=False,
-        default="applied",
-        server_default="applied",
+        default=ApplicationStatus.APPLIED,
+        server_default=ApplicationStatus.APPLIED.value,
     )
 
     notes: Mapped[str | None] = mapped_column(
         Text,
+        nullable=True,
+    )
+
+    rejection_reason: Mapped[str | None] = mapped_column(
+        String(255),
         nullable=True,
     )
 
@@ -72,7 +88,6 @@ class JobApplication(Base):
         onupdate=func.now(),
     )
 
-    # ORM Relationships for clean joining and eager loading
-    organization = relationship("Organization")
-    candidate = relationship("Candidate")
-    job = relationship("Job")
+    # Decoupled string relationships to avoid direct model imports from other domains
+    candidate = relationship("Candidate", lazy="raise")
+    job = relationship("Job", lazy="raise")
