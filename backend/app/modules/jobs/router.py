@@ -16,11 +16,11 @@ from app.modules.jobs import controller
 from app.modules.jobs.models import Job, JobMatchCriteria, JobStatus, WorkModel
 from app.modules.jobs.schemas import (
     JobCreate,
+    JobMatchCriteriaCreate,
+    JobMatchCriteriaRead,
     JobRead,
     JobStatusUpdate,
     JobUpdate,
-    MatchCriteriaCreate,
-    MatchCriteriaRead,
 )
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
@@ -110,19 +110,6 @@ def update_job_status(
     )
 
 
-@router.put("/{job_id}/criteria", response_model=list[MatchCriteriaRead])
-def update_job_match_criteria(
-    job_id: int,
-    criteria_data: list[MatchCriteriaCreate],
-    context: Annotated[AuthContext, Depends(get_job_manager)],
-    db: Annotated[Session, Depends(get_db)],
-) -> list[JobMatchCriteria]:
-    return controller.upsert_match_criteria(
-        job_id=job_id,
-        criteria_data=criteria_data,
-        db=db,
-        organization_id=context.organization_id,
-    )
 
 
 @router.delete("/{job_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -132,3 +119,51 @@ def delete_job(
     db: Annotated[Session, Depends(get_db)],
 ) -> None:
     controller.delete_job(job_id, db, context.organization_id)
+
+
+@router.post(
+    "/{job_id}/criteria",
+    response_model=JobMatchCriteriaRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_match_criterion(
+    job_id: int,
+    data: JobMatchCriteriaCreate,
+    context: Annotated[AuthContext, Depends(get_job_manager)],
+    db: Annotated[Session, Depends(get_db)],
+) -> JobMatchCriteriaRead:
+    return controller.create_criterion(
+        db=db, job_id=job_id, organization_id=context.organization_id, data=data
+    )
+
+
+@router.put(
+    "/{job_id}/criteria",
+    response_model=list[JobMatchCriteriaRead],
+)
+def update_job_match_criteria(
+    job_id: int,
+    criteria_data: list[JobMatchCriteriaCreate],
+    context: Annotated[AuthContext, Depends(get_job_manager)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[JobMatchCriteriaRead]:
+    return controller.replace_criteria(
+        db=db,
+        job_id=job_id,
+        organization_id=context.organization_id,
+        criteria_data=criteria_data,
+    )
+
+
+@router.get(
+    "/{job_id}/criteria",
+    response_model=list[JobMatchCriteriaRead],
+)
+def list_match_criteria(
+    job_id: int,
+    context: Annotated[AuthContext, Depends(get_current_context)],
+    db: Annotated[Session, Depends(get_db)],
+) -> list[JobMatchCriteriaRead]:
+    return controller.get_job_criteria(
+        db=db, job_id=job_id, organization_id=context.organization_id
+    )

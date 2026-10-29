@@ -9,7 +9,8 @@ from app.modules.jobs.schemas import (
     JobCreate,
     JobStatusUpdate,
     JobUpdate,
-    MatchCriteriaCreate,
+    JobMatchCriteriaCreate,
+    JobMatchCriteriaRead
 )
 
 
@@ -73,19 +74,6 @@ def update_job_status(
     )
 
 
-def upsert_match_criteria(
-    job_id: int,
-    criteria_data: list[MatchCriteriaCreate],
-    db: Session,
-    organization_id: int,
-) -> list[JobMatchCriteria]:
-    return service.upsert_match_criteria(
-        db,
-        job_id,
-        criteria_data,
-        organization_id,
-    )
-
 
 def delete_job(
     job_id: int,
@@ -93,3 +81,41 @@ def delete_job(
     organization_id: int,
 ) -> None:
     service.delete_job(db, job_id, organization_id)
+
+
+def create_criterion(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+    data: JobMatchCriteriaCreate,
+) -> JobMatchCriteriaRead:
+    return service.create_job_criterion(
+        db=db,
+        job_id=job_id,
+        organization_id=organization_id,
+        data=data,
+    )
+
+def replace_criteria(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+    criteria_data: list[JobMatchCriteriaCreate],
+) -> list[JobMatchCriteriaRead]:
+    return service.replace_job_criteria(
+        db=db,
+        job_id=job_id,
+        organization_id=organization_id,
+        criteria_data=criteria_data,  # Must match service.py parameter name!
+    )
+
+def get_job_criteria(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+) -> list[JobMatchCriteriaRead]:
+    return service.get_job_criteria(
+        db=db,
+        job_id=job_id,
+        organization_id=organization_id,
+    )

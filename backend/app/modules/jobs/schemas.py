@@ -1,7 +1,7 @@
 # backend/app/modules/jobs/schemas.py
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.modules.jobs.models import (
@@ -37,22 +37,44 @@ class HiringTeamMemberRead(BaseModel):
     id: int
     user_id: int
     role: HiringRole
-
+ 
     model_config = ConfigDict(from_attributes=True)
 
 
-class MatchCriteriaCreate(BaseModel):
+class JobMatchCriteriaCreate(BaseModel):
     keyword: str = Field(..., min_length=1, max_length=100)
     category: MatchCategory = MatchCategory.SKILL
     weight: int = Field(default=3, ge=1, le=5)
     is_required: bool = False
+    @field_validator("category", mode="before")
+    @classmethod
+    def normalize_category(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.lower()  # Converts "SKILL" or "Skill" -> "skill"
+        return v
 
+    @field_validator("weight", mode="before")
+    @classmethod
+    def normalize_weight(cls, v: Any) -> Any:
+        if isinstance(v, (float, str)):
+            return int(float(v))  # Converts 2.0 -> 2
+        return v
 
-class MatchCriteriaRead(MatchCriteriaCreate):
+class JobCriteriaBulkUpdate(BaseModel):
+    criteria: list[JobMatchCriteriaCreate] = Field(
+        ..., max_length=20, description="Maximum 20 match criteria allowed per job requisition"
+    )
+
+class JobMatchCriteriaRead(JobMatchCriteriaCreate):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     job_id: int
-
-    model_config = ConfigDict(from_attributes=True)
+    keyword: str
+    weight: int
+    category: MatchCategory
+    is_required: bool
+    
 
 
 class JobCreate(BaseModel):
@@ -69,7 +91,7 @@ class JobCreate(BaseModel):
     salary_range: Optional[SalaryRange] = None
     pipeline_id: Optional[int] = None
     hiring_team: Optional[List[HiringTeamMemberCreate]] = None
-    match_criteria: Optional[List[MatchCriteriaCreate]] = None
+    match_criteria: Optional[List[JobMatchCriteriaRead]] = None
 
 
 class JobUpdate(BaseModel):
@@ -112,7 +134,7 @@ class JobRead(BaseModel):
     applicant_count: int = 0
     pipeline_id: Optional[int] = None
     hiring_team: List[HiringTeamMemberRead] = []
-    match_criteria: List[MatchCriteriaRead] = []
+    match_criteria: List[JobMatchCriteriaRead] = []
     created_at: datetime
     updated_at: Optional[datetime] = None
     closed_at: Optional[datetime] = None

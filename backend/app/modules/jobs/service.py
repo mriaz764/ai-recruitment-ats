@@ -17,9 +17,10 @@ from app.modules.jobs.models import (
 )
 from app.modules.jobs.schemas import (
     JobCreate,
+    JobMatchCriteriaRead,
     JobStatusUpdate,
     JobUpdate,
-    MatchCriteriaCreate,
+    JobMatchCriteriaCreate,
 )
 
 
@@ -160,28 +161,31 @@ def update_job_status(
         raise
 
 
-def upsert_match_criteria(
+def replace_job_criteria(
     db: Session,
     job_id: int,
-    criteria_data: list[MatchCriteriaCreate],
     organization_id: int,
-) -> list[JobMatchCriteria]:
+    criteria_data: list[JobMatchCriteriaCreate],
+) -> list[JobMatchCriteriaRead]:
     get_job(db, job_id, organization_id)  # Ensure job exists and user has org access
 
-    new_criteria = [
-        JobMatchCriteria(
-            keyword=c.keyword,
-            category=c.category,
-            weight=c.weight,
-            is_required=c.is_required,
-        )
-        for c in criteria_data
-    ]
+    seen_keywords = set()
+    unique_criteria: list[JobMatchCriteriaCreate] = []
+
+    for c in criteria_data:
+        normalized_kw = c.keyword.strip().lower()
+        if normalized_kw not in seen_keywords:
+            seen_keywords.add(normalized_kw)
+            unique_criteria.append(c)
 
     try:
-        result = repository.replace_match_criteria(db, job_id, new_criteria)
+        result = repository.replace_match_criteria(
+            db=db,
+            job_id=job_id,
+            criteria_data=unique_criteria,
+        )
         db.commit()
-        return result
+        return [JobMatchCriteriaRead.model_validate(c) for c in result]
     except SQLAlchemyError:
         db.rollback()
         raise
@@ -196,3 +200,37 @@ def delete_job(db: Session, job_id: int, organization_id: int) -> None:
     except SQLAlchemyError:
         db.rollback()
         raise
+
+
+def create_job_criterion(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+    data: JobMatchCriteriaCreate,
+) -> JobMatchCriteriaRead:
+    job = (
+        db.query(Job)
+        .filter(Job.id == job_id, Job.organization_id == organization_id)
+        .first()
+    )
+    if not job:
+        raise NotFoundError(
+            code="JOB_NOT_FOUND",
+            detail="Job requisition not found in organization",
+        )
+
+    criterion = repository.create_job_criterion(db=db, job_id=job_id, data=data)
+    db.commit()
+    db.refresh(criterion)
+    return JobMatchCriteriaRead.model_validate(criterion)
+
+
+def get_job_criteria(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+) -> list[JobMatchCriteriaRead]:
+    criteria = repository.get_criteria_by_job(
+        db=db, job_id=job_id, organization_id=organization_id
+    )
+    return [JobMatchCriteriaRead.model_validate(c) for c in criteria]

@@ -1,12 +1,12 @@
 # backend/app/modules/jobs/repository.py
 
+from app.modules.jobs.schemas import JobMatchCriteriaCreate
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.schemas import PaginationParams
 from app.modules.jobs.models import (
     Job,
-    JobHiringTeam,
     JobMatchCriteria,
     JobStatus,
     WorkModel,
@@ -107,18 +107,56 @@ def delete(db: Session, job: Job) -> None:
 def replace_match_criteria(
     db: Session,
     job_id: int,
-    new_criteria: list[JobMatchCriteria],
+    criteria_data: list[JobMatchCriteriaCreate],
 ) -> list[JobMatchCriteria]:
-    # Delete existing criteria for the job requisition
-    existing_stmt = select(JobMatchCriteria).where(JobMatchCriteria.job_id == job_id)
-    existing_items = list(db.scalars(existing_stmt).all())
-    for item in existing_items:
-        db.delete(item)
+    db.query(JobMatchCriteria).filter(JobMatchCriteria.job_id == job_id).delete(
+        synchronize_session=False
+    )
 
-    # Insert updated criteria
-    for criterion in new_criteria:
-        criterion.job_id = job_id
-        db.add(criterion)
-
+    new_records = [
+        JobMatchCriteria(
+            job_id=job_id,
+            keyword=item.keyword.strip(),
+            category=item.category,
+            weight=item.weight,
+            is_required=item.is_required,
+        )
+        for item in criteria_data
+    ]
+    db.add_all(new_records)
     db.flush()
-    return new_criteria
+    return new_records
+
+
+
+def create_job_criterion(
+    db: Session,
+    job_id: int,
+    data: JobMatchCriteriaCreate,
+) -> JobMatchCriteria:
+    criterion = JobMatchCriteria(
+        job_id=job_id,
+        keyword=data.keyword,
+        category=data.category,
+        weight=data.weight,
+        is_required=data.is_required,
+    )
+    db.add(criterion)
+    db.flush()
+    return criterion
+
+def get_criteria_by_job(
+    db: Session,
+    job_id: int,
+    organization_id: int,
+) -> list[JobMatchCriteria]:
+    """Retrieve all match criteria configured for a specific job requisition within the tenant."""
+    statement = (
+        select(JobMatchCriteria).join(Job, JobMatchCriteria.job_id == Job.id).where(
+        JobMatchCriteria.job_id == job_id,
+        Job.organization_id == organization_id,
+        )
+    )
+    return list(db.scalars(statement).all())
+
+

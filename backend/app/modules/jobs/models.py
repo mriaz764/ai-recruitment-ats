@@ -1,8 +1,8 @@
 # backend/app/modules/jobs/models.py
 
-from datetime import datetime, timezone
+from datetime import datetime
 import enum
-from typing import List, Optional
+from typing import List
 from sqlalchemy import (
     Boolean,
     DateTime,
