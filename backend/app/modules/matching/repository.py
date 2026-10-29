@@ -1,38 +1,59 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from app.modules.jobs.models import JobMatchCriteria
+
 from app.modules.matching.models import CandidateMatchScore
 
 
-def get_criteria_by_job(
+def upsert_match_score(
     db: Session,
-    job_id: int,
     organization_id: int,
-) -> list[JobMatchCriteria]:
-    statement = (
-        select(JobMatchCriteria)
-        .where(JobMatchCriteria.job_id == job_id)
-        .where(JobMatchCriteria.organization_id == organization_id)
+    job_id: int,
+    candidate_id: int,
+    overall_score: float,
+    is_knocked_out: bool,
+    breakdown: dict,
+    ai_summary: str | None = None,
+) -> CandidateMatchScore:
+    """Insert or update the calculated candidate match score record."""
+    statement = select(CandidateMatchScore).where(
+        CandidateMatchScore.organization_id == organization_id,
+        CandidateMatchScore.job_id == job_id,
+        CandidateMatchScore.candidate_id == candidate_id,
     )
-    return list(db.scalars(statement).all())
+    existing = db.scalar(statement)
+
+    if existing:
+        existing.overall_score = overall_score
+        existing.is_knocked_out = is_knocked_out
+        existing.breakdown = breakdown
+        existing.ai_summary = ai_summary
+        score_record = existing
+    else:
+        score_record = CandidateMatchScore(
+            organization_id=organization_id,
+            job_id=job_id,
+            candidate_id=candidate_id,
+            overall_score=overall_score,
+            is_knocked_out=is_knocked_out,
+            breakdown=breakdown,
+            ai_summary=ai_summary,
+        )
+        db.add(score_record)
+
+    db.flush()
+    return score_record
 
 
-def create_criterion(
+def get_match_score(
     db: Session,
-    job_id: int,
     organization_id: int,
-    criterion_name: str,
-    weight: float,
-    keywords: str,
-) -> JobMatchCriteria:
-    criterion = JobMatchCriteria(
-        job_id=job_id,
-        organization_id=organization_id,
-        criterion_name=criterion_name,
-        weight=weight,
-        keywords=keywords,
+    job_id: int,
+    candidate_id: int,
+) -> CandidateMatchScore | None:
+    """Fetch a persisted match score for a specific candidate and job."""
+    statement = select(CandidateMatchScore).where(
+        CandidateMatchScore.organization_id == organization_id,
+        CandidateMatchScore.job_id == job_id,
+        CandidateMatchScore.candidate_id == candidate_id,
     )
-    db.add(criterion)
-    db.commit()
-    db.refresh(criterion)
-    return criterion
+    return db.scalar(statement)
