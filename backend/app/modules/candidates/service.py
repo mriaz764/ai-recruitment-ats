@@ -3,20 +3,19 @@ import re
 from fastapi import HTTPException
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import Session
-from app.core.schemas import PaginationParams
+
 from app.core.exceptions import ConflictError, NotFoundError
+from app.core.schemas import PaginationParams
 from app.modules.candidates import repository
-from app.modules.candidates.models import Candidate
+from app.modules.candidates.models import Candidate, CreationSource
 from app.modules.candidates.schemas import CandidateCreate, CandidateUpdate
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-
 DUPLICATE_EMAIL_CONSTRAINT = "uq_candidate_organization_email"
 
 
 def _normalize_name(full_name: str) -> str:
     normalized = full_name.strip()
-
     if not normalized:
         raise HTTPException(
             status_code=422,
@@ -25,13 +24,11 @@ def _normalize_name(full_name: str) -> str:
                 "message": "Candidate name cannot be empty.",
             },
         )
-
     return normalized
 
 
 def _normalize_email(email: str) -> str:
     normalized = email.strip().lower()
-
     if not EMAIL_PATTERN.fullmatch(normalized):
         raise HTTPException(
             status_code=422,
@@ -40,7 +37,6 @@ def _normalize_email(email: str) -> str:
                 "message": "Enter a valid email address.",
             },
         )
-
     return normalized
 
 
@@ -62,7 +58,6 @@ def _handle_database_error(exc: SQLAlchemyError) -> None:
             "A candidate with this email already exists in your organization.",
             code="CANDIDATE_EMAIL_ALREADY_EXISTS",
         ) from exc
-
     raise exc
 
 
@@ -70,6 +65,7 @@ def create_candidate(
     db: Session,
     candidate_data: CandidateCreate,
     organization_id: int,
+    creation_source: CreationSource = CreationSource.MANUAL,
 ) -> Candidate:
     full_name = _normalize_name(candidate_data.full_name)
     email = _normalize_email(candidate_data.email)
@@ -83,12 +79,21 @@ def create_candidate(
     candidate = Candidate(
         full_name=full_name,
         email=email,
-        phone=candidate_data.phone.strip() or None if candidate_data.phone else None,
+        phone=candidate_data.phone.strip() if candidate_data.phone else None,
+        headline=candidate_data.headline.strip() if candidate_data.headline else None,
+        summary=candidate_data.summary,
+        experience_years=candidate_data.experience_years,
+        location=candidate_data.location.strip() if candidate_data.location else None,
+        creation_source=creation_source,
         organization_id=organization_id,
     )
 
     try:
         repository.create(db, candidate)
+        
+        if hasattr(candidate_data, "skills") and candidate_data.skills:
+            repository.sync_skills(db, candidate.id, candidate_data.skills)
+
         db.commit()
         db.refresh(candidate)
     except SQLAlchemyError as exc:
@@ -135,7 +140,6 @@ def update_candidate(
     organization_id: int,
 ) -> Candidate:
     candidate = get_candidate(db, candidate_id, organization_id)
-
     updates = candidate_data.model_dump(exclude_unset=True)
 
     if not updates:
@@ -147,21 +151,17 @@ def update_candidate(
             },
         )
 
+    # Handle skill list updates separately
+    skills_to_update = updates.pop("skills", None)
+
     if "full_name" in updates:
         if updates["full_name"] is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Full name cannot be null.",
-            )
-
+            raise HTTPException(status_code=422, detail="Full name cannot be null.")
         updates["full_name"] = _normalize_name(updates["full_name"])
 
     if "email" in updates:
         if updates["email"] is None:
-            raise HTTPException(
-                status_code=422,
-                detail="Email cannot be null.",
-            )
+            raise HTTPException(status_code=422, detail="Email cannot be null.")
 
         email = _normalize_email(updates["email"])
         existing = repository.get_by_email(db, email, organization_id)
@@ -171,7 +171,6 @@ def update_candidate(
                 "A candidate with this email already exists in your organization.",
                 code="CANDIDATE_EMAIL_ALREADY_EXISTS",
             )
-
         updates["email"] = email
 
     if "phone" in updates and updates["phone"] is not None:
@@ -179,6 +178,14 @@ def update_candidate(
 
     try:
         repository.update(db, candidate, updates)
+
+        if skills_to_update is not None:
+            repository.sync_skills(db, candidate.id, skills_to_update)
+
+        # Mark source as overridden if edited after AI parsing
+        if candidate.creation_source == CreationSource.AI_PARSED:
+            candidate.creation_source = CreationSource.AI_WITH_MANUAL_OVERRIDE
+
         db.commit()
         db.refresh(candidate)
     except SQLAlchemyError as exc:

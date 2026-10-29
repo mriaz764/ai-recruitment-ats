@@ -9,9 +9,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.core.config import MAX_RESUME_SIZE_BYTES
-from app.modules.candidates import repository, storage
+from app.modules.candidates import repository
 from app.modules.candidates.extractor import CVTextExtractorService
-from app.modules.candidates.resume_models import CandidateResume
+from app.modules.candidates.models import CandidateResume, ParsingStatus
+from app.modules.candidates.storage import storage_provider
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +50,7 @@ def get_resume(
             },
         )
 
-    path = storage.get_resume_path(resume.storage_key)
+    path = storage_provider.get_resume_path(resume.storage_key, organization_id)
 
     if not path.is_file():
         raise HTTPException(
@@ -109,7 +110,9 @@ async def upload_resume(
     db: Session,
     candidate_id: int,
     organization_id: int,
+    user_id: int,
     upload: UploadFile,
+    parse_with_ai: bool = True,
 ) -> CandidateResume:
     candidate = repository.get_by_id(db, candidate_id, organization_id)
 
@@ -149,33 +152,30 @@ async def upload_resume(
             status_code=413,
             detail={
                 "code": "RESUME_TOO_LARGE",
-                "message": (
-                    f"The maximum resume size is {MAX_RESUME_SIZE_BYTES:,} bytes."
-                ),
+                "message": f"The maximum resume size is {MAX_RESUME_SIZE_BYTES:,} bytes.",
             },
         )
 
     extension = _validate_resume(content, filename)
-    storage_key = storage.save_resume(content, extension)
+    storage_key = storage_provider.save_resume(content, extension, organization_id)
 
-    # Extract raw text for manual full-text search and future AI pipelines
+    # 1. Plain Text Extraction
     try:
-        file_path = storage.get_resume_path(storage_key)
+        file_path = storage_provider.get_resume_path(storage_key, organization_id)
         extractor = CVTextExtractorService()
         extraction_result = extractor.extract_from_path(file_path)
         raw_text = extraction_result.text
     except Exception:
         try:
-            storage.delete_resume(storage_key)
+            storage_provider.delete_resume(storage_key, organization_id)
         except OSError:
-            logger.exception(
-                "Failed to clean up resume file after extraction failure: %s",
-                storage_key,
-            )
+            logger.exception("Failed to clean up resume file after extraction failure.")
         raise
 
+    # 2. Candidate Resume Record Creation
     resume = CandidateResume(
         candidate_id=candidate.id,
+        organization_id=organization_id,
         original_filename=filename,
         storage_key=storage_key,
         content_type=(
@@ -185,10 +185,21 @@ async def upload_resume(
         ),
         file_size=len(content),
         raw_text=raw_text,
+        parsing_status=ParsingStatus.PENDING if parse_with_ai else ParsingStatus.SKIPPED,
     )
 
     try:
         db.add(resume)
+        db.flush()
+
+        # 3. Optional AI Structured Parsing Execution Point
+        if parse_with_ai:
+            # Here we invoke quota guard check, LLM Factory, and update candidate profile/skills
+            # e.g., parsed_data = parse_resume_with_ai_quota(db, organization_id, user_id, raw_text)
+            # resume.parsed_json = parsed_data
+            # resume.parsing_status = ParsingStatus.SUCCESS
+            pass
+
         db.commit()
         db.refresh(resume)
     except SQLAlchemyError:
@@ -198,12 +209,9 @@ async def upload_resume(
             logger.exception("Failed to roll back resume upload transaction.")
 
         try:
-            storage.delete_resume(storage_key)
+            storage_provider.delete_resume(storage_key, organization_id)
         except OSError:
-            logger.exception(
-                "Failed to clean up resume file after database failure: %s",
-                storage_key,
-            )
+            logger.exception("Failed to clean up resume file after database failure.")
 
         raise
 

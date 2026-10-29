@@ -1,9 +1,8 @@
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
-from app.modules.candidates.models import Candidate
-from app.modules.candidates.resume_models import CandidateResume
 from app.core.schemas import PaginationParams
+from app.modules.candidates.models import Candidate, CandidateSkill, CandidateResume
 
 
 def create(db: Session, candidate: Candidate) -> Candidate:
@@ -20,6 +19,7 @@ def list_all(
 ) -> tuple[list[Candidate], int]:
     statement = (
         select(Candidate)
+        .options(selectinload(Candidate.skills))
         .where(Candidate.organization_id == organization_id)
         .order_by(Candidate.created_at.desc())
     )
@@ -46,9 +46,13 @@ def get_by_id(
     candidate_id: int,
     organization_id: int,
 ) -> Candidate | None:
-    statement = select(Candidate).where(
-        Candidate.id == candidate_id,
-        Candidate.organization_id == organization_id,
+    statement = (
+        select(Candidate)
+        .options(selectinload(Candidate.skills), selectinload(Candidate.resumes))
+        .where(
+            Candidate.id == candidate_id,
+            Candidate.organization_id == organization_id,
+        )
     )
     return db.scalar(statement)
 
@@ -78,6 +82,25 @@ def update(
     return candidate
 
 
+def sync_skills(
+    db: Session,
+    candidate_id: int,
+    skills: list[str],
+) -> list[CandidateSkill]:
+    """Replaces or adds candidate skills in a single transaction."""
+    db.query(CandidateSkill).filter(CandidateSkill.candidate_id == candidate_id).delete()
+    
+    skill_entities = [
+        CandidateSkill(candidate_id=candidate_id, skill_name=s.strip())
+        for s in skills
+        if s.strip()
+    ]
+    
+    db.add_all(skill_entities)
+    db.flush()
+    return skill_entities
+
+
 def search(
     db: Session,
     organization_id: int,
@@ -85,6 +108,7 @@ def search(
 ) -> list[Candidate]:
     statement = (
         select(Candidate)
+        .options(selectinload(Candidate.skills))
         .join(CandidateResume, Candidate.id == CandidateResume.candidate_id)
         .where(Candidate.organization_id == organization_id)
         .where(func.to_tsvector("english", CandidateResume.raw_text).match(query))
