@@ -7,14 +7,14 @@ from alembic import context
 from app.core.config import DATABASE_URL
 from app.db.session import Base
 from app.modules.applications.models import JobApplication  # noqa: F401
-from app.modules.candidates.models import Candidate  # noqa: F401
-from app.modules.candidates.resume_models import CandidateResume  # noqa: F401
+from app.modules.candidates.models import Candidate, CandidateResume, CandidateSkill  # noqa: F401
 from app.modules.jobs.models import Job, JobHiringTeam, JobMatchCriteria  # noqa: F401
 from app.modules.organizations.models import (  # noqa: F401
     Membership,
     Organization,
     User,
 )
+from app.modules.matching.models import CandidateMatchScore  # noqa: F401
 from app.modules.interviews.models import Interview, InterviewInterviewer # noqa: F401
 
 
